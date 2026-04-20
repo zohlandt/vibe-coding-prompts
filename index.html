@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompts — Vibe Coding met Claude</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --indigo: #1A1A2E;
+  --purple: #818CF8;
+  --purple-light: #a5aef8;
+  --purple-bg: #eef0ff;
+  --border: #e0e0e4;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --success: #34c759;
+  --radius: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  background: var(--indigo);
+  color: #fff;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.header .subtitle {
+  font-size: 1rem;
+  color: var(--purple-light);
+  font-weight: 400;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header .book-author {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 0.75rem;
+}
+
+.header .book-link {
+  margin-top: 0.75rem;
+}
+
+.header .book-link a {
+  color: var(--purple-light);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(165,174,248,0.3);
+  transition: border-color 0.15s;
+}
+
+.header .book-link a:hover {
+  border-color: var(--purple-light);
+}
+
+/* Main */
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* Chapter accordion */
+.chapter {
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s;
+}
+
+.chapter-header:hover {
+  background: var(--purple-bg);
+}
+
+.chapter-header .arrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+  color: var(--purple);
+}
+
+.chapter.open .chapter-header .arrow {
+  transform: rotate(90deg);
+}
+
+.chapter-header .arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chapter-header .ch-number {
+  flex-shrink: 0;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chapter-header .ch-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chapter-body {
+  display: none;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.chapter.open .chapter-body {
+  display: block;
+}
+
+/* Prompt card */
+.prompt-card {
+  margin-top: 1rem;
+}
+
+.prompt-card:first-child {
+  margin-top: 0.5rem;
+}
+
+.prompt-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.prompt-label .num {
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.prompt-block {
+  position: relative;
+  background: var(--code-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prompt-text {
+  display: block;
+  padding: 1rem 3.5rem 1rem 1rem;
+  color: var(--code-text);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #cdd6f4;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+}
+
+.copy-btn.copied {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header { padding: 2rem 1rem 1.75rem; }
+  .header h1 { font-size: 1.35rem; }
+  .header .subtitle { font-size: 0.9rem; }
+  .main { padding: 1rem 0.75rem 2rem; }
+  .chapter-header { padding: 0.85rem 1rem; }
+  .chapter-body { padding: 0 1rem 1rem; }
+  .prompt-text { font-size: 0.78rem; padding: 0.85rem 3rem 0.85rem 0.85rem; }
+  .chapter-header .ch-title { font-size: 0.88rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Vibe Coding met Claude</h1>
+  <p class="subtitle">Alle prompts uit het boek, klaar om te kopie&#776;ren.</p>
+  <p class="book-author">Jean-Marc Zohlandt</p>
+  <p class="book-link"><a href="https://amzn.eu/d/0gE2hB8i" target="_blank" rel="noopener">Bestel het boek op Amazon</a></p>
+</header>
+
+<main class="main" id="app"></main>
+
+<footer class="footer">
+  &copy; 2026 Jean-Marc Zohlandt &mdash; Vibe Coding met Claude: Van Idee naar App &mdash; Zonder Programmeren
+</footer>
+
+<script>
+var DATA = [
+  {
+    num: 3,
+    title: "Je eerste gesprek met Claude Code",
+    prompts: [
+      { id: 1, label: "Je allereerste prompt \u2014 Hallo Wereld", text: "Maak een HTML-pagina die \"Hallo Wereld\" zegt met een mooie opmaak" },
+      { id: 2, label: "Bekijk wat Claude heeft gemaakt", text: "Laat de inhoud van index.html zien" },
+      { id: 3, label: "Je eerste aanpassing", text: "Verander de achtergrondkleur naar lichtblauw en maak de tekst groter" }
+    ]
+  },
+  {
+    num: 4,
+    title: "Hoe \u201cdenkt\u201d Claude Code?",
+    prompts: [
+      { id: 4, label: "Vaag voorbeeld \u2014 contactformulier", text: "Maak een contactformulier" },
+      { id: 5, label: "Specifiek voorbeeld \u2014 contactformulier", text: "Maak een contactformulier met de velden: naam, e-mailadres, \ntelefoonnummer (optioneel), en een berichtveld. De verzendknop \nmoet groen zijn met witte tekst. Na het verzenden verschijnt er \neen bevestigingsmelding op dezelfde pagina. Gebruik dezelfde stijl \nals de rest van de website." },
+      { id: 6, label: "Vaag voorbeeld \u2014 sorteren", text: "Voeg sorteren toe" },
+      { id: 7, label: "Specifiek voorbeeld \u2014 sorteren", text: "Voeg een sorteerknop toe boven de takenlijst. De gebruiker moet \nkunnen sorteren op: datum (nieuwste eerst), prioriteit (hoogste \neerst), en alfabetisch (A-Z). De actieve sorteeroptie moet \nvisueel gemarkeerd zijn. Standaard wordt gesorteerd op datum." }
+    ]
+  },
+  {
+    num: 5,
+    title: "Project 1: Een persoonlijke website",
+    prompts: [
+      { id: 8, label: "Volledige website-opdracht", text: "Ik wil een persoonlijke portfolio-website maken. Het wordt een enkele\nHTML-pagina met CSS-styling. De site is voor een fictieve freelance\ngrafisch ontwerper genaamd Lisa de Vries.\n\nDe pagina moet de volgende secties hebben:\n- Een header met haar naam en een korte tagline\n- Een \"Over mij\"-sectie met een paar alinea's over haar achtergrond\n- Een \"Werk\"-sectie met 3 projecten (titel, korte beschrijving,\n  en een placeholder voor een afbeelding)\n- Een \"Contact\"-sectie met e-mailadres en links naar sociale media\n- Een footer\n\nHet design moet modern en minimalistisch zijn, met veel witruimte.\nKleurenschema: donkerblauw (#1a365d) als hoofdkleur, met lichtgrijs\n(#f7f7f7) als achtergrond. Lettertype: het standaard systeemlettertype\nis prima.\n\nMaak een index.html en een apart style.css bestand." },
+      { id: 9, label: "Bekijk de code", text: "Laat de inhoud van index.html zien" },
+      { id: 10, label: "Content personaliseren", text: "Pas de content aan. De site is nu voor mij:\n- Naam: Thomas Bakker\n- Beroep: freelance fotograaf\n- Tagline: \"Ik vang momenten die je niet kunt herhalen\"\n- Over mij: ik ben een autodidact fotograaf uit Utrecht, gespecialiseerd\n  in evenementen en portretfotografie. Ik werk al 5 jaar als freelancer.\n- Projecten:\n  1. \"Festival Zomer\" - festivalfotografie voor een driedaags muziekfestival\n  2. \"Stadsportretten\" - een serie portretten van Utrechtse ondernemers\n  3. \"Bruiloft van het Jaar\" - trouwfotografie in een oude fabriek\n- E-mail: thomas@bakker-fotografie.nl" },
+      { id: 11, label: "E\u00e9n tekst aanpassen", text: "Verander de tagline naar \"Elk moment verdient een goed beeld\"" },
+      { id: 12, label: "Uitgebreide styling-aanpassingen", text: "Pas de styling aan:\n- Maak de header een groot vlak met de donkerblauwe achtergrondkleur\n  en witte tekst, met veel padding zodat het als een hero-sectie werkt\n- De projectkaarten moeten een subtiele schaduw krijgen en bij hover\n  een beetje omhoog bewegen (een kleine animatie)\n- De contactsectie moet een lichtblauwe achtergrond krijgen (#e8f0fe)\n- Zorg dat alles er ook goed uitziet op een telefoon" },
+      { id: 13, label: "Kleur bijstellen", text: "De donkerblauwe kleur is me te donker. Maak het iets lichter,\nmeer richting koningsblauw." },
+      { id: 14, label: "Spacing fixen", text: "De tekst in de \"Over mij\"-sectie staat te dicht op de rand.\nKun je links en rechts meer ruimte toevoegen?" },
+      { id: 15, label: "Gradient toevoegen", text: "Voeg een subtiel gradient toe aan de header, van donkerblauw\nlinks naar iets lichter blauw rechts." },
+      { id: 16, label: "Lokale server starten", text: "Kun je een simpele lokale webserver starten zodat ik de site kan\nbekijken met live herladen?" },
+      { id: 17, label: "Site uitbreiden met extra pagina", text: "Ik wil de site uitbreiden:\n1. Maak een aparte pagina \"over.html\" met een uitgebreidere versie\n   van het \"Over mij\"-verhaal. Voeg daar ook een tijdlijn toe met\n   belangrijke momenten uit mijn carri\u00e8re (verzin er 4 of 5).\n2. Voeg een navigatiebalk toe aan beide pagina's met links naar\n   \"Home\" en \"Over mij\".\n3. Zorg dat de navigatiebalk er consistent uitziet op beide pagina's\n   en dat de actieve pagina gemarkeerd is." },
+      { id: 18, label: "Fotogalerij met lightbox", text: "Voeg een fotogalerij-pagina toe met een grid van 6 placeholder-\nafbeeldingen. Als je op een afbeelding klikt, moet die groter\nworden weergegeven in een overlay (een lightbox-effect)." }
+    ]
+  },
+  {
+    num: 6,
+    title: "Project 2: Een handige rekentool",
+    prompts: [
+      { id: 19, label: "Volledige BTW-calculator opdracht", text: "Ik wil een BTW-calculator bouwen als een enkele webpagina (HTML, CSS en \nJavaScript in \u00e9\u00e9n bestand). Het is een praktisch tooltje voor \nzzp'ers en kleine ondernemers in Nederland.\n\nFunctionaliteit:\n- Een invoerveld voor een bedrag\n- Een keuze tussen 9% BTW (laag tarief) en 21% BTW (hoog tarief)\n- Een schakelaar om te kiezen tussen \"exclusief naar inclusief\" en \n  \"inclusief naar exclusief\"\n- Direct het resultaat tonen: het BTW-bedrag en het totaal\n- De berekening moet live updaten terwijl je typt, zonder een \n  knop te hoeven klikken\n\nDesign:\n- Modern en clean, met een lichtblauw kleurenschema\n- Moet goed werken op zowel desktop als mobiel\n- Nederlandse labels en teksten" },
+      { id: 20, label: "Drie bugs tegelijk melden", text: "Er zijn een paar problemen met de calculator:\n\n1. Nederlandse gebruikers typen komma's als decimaalteken (bijv. \n   \"100,50\" in plaats van \"100.50\"). De calculator moet beide \n   accepteren.\n\n2. De \"inclusief naar exclusief\" berekening klopt niet. Bij 121 euro \n   inclusief 21% BTW moet het resultaat 100 euro exclusief zijn. \n   De formule moet zijn: exclusief = inclusief / (1 + btw-percentage).\n\n3. Het invoerveld is te klein op mobiel. Maak het groter met een \n   grotere font-size.\n\nKun je deze drie problemen oplossen?" },
+      { id: 21, label: "Kopieer-naar-klembord functie", text: "Ik wil een extra functie toevoegen aan de BTW-calculator:\n\nVoeg onder het resultaat een \"Kopieer naar klembord\" knop toe. \nAls je daarop klikt, wordt een nette tekst gekopieerd in dit formaat:\n\nBTW-berekening\n--------------\nBedrag excl. BTW: \u20ac 100,00\nBTW (21%):        \u20ac  21,00\nBedrag incl. BTW: \u20ac 121,00\n\nLet op: gebruik Nederlandse notatie met komma's als decimaalteken \nen punten als duizendtallen-scheider (bijv. \u20ac 1.250,00).\n\nToon ook een korte bevestiging \"Gekopieerd!\" als de gebruiker \nop de knop klikt." },
+      { id: 22, label: "Wis-knop en footer", text: "Voeg nog twee dingen toe:\n\n1. Een \"Wis alles\" knop die het invoerveld leegmaakt en het \n   resultaat reset.\n\n2. Voeg een kleine footer toe onderaan met de tekst \n   \"BTW-tarief Nederland 2026 -- Laag: 9% | Hoog: 21%\"\n   in een lichtgrijs kleurtje. Dit helpt gebruikers te bevestigen \n   dat ze de juiste tarieven gebruiken." },
+      { id: 23, label: "Uitleg vragen over berekening", text: "Kun je uitleggen hoe de inclusief-naar-exclusief berekening nu werkt? \nWelke formule gebruik je? Loop de berekening stap voor stap door \nvoor het bedrag 121 euro met 21% BTW." }
+    ]
+  },
+  {
+    num: 7,
+    title: "Project 3: Een notitie-app met opslag",
+    prompts: [
+      { id: 24, label: "Volledige notitie-app opdracht", text: "Ik wil een notitie-app bouwen als een enkele HTML-pagina met inline CSS en JavaScript. \n\nDe app moet het volgende kunnen:\n- Een tekstveld waar ik een notitie kan typen\n- Een knop om de notitie op te slaan\n- Een lijst van alle opgeslagen notities, met de nieuwste bovenaan\n- Elke notitie toont de tekst en de datum/tijd waarop die is aangemaakt\n- Notities worden opgeslagen in localStorage zodat ze bewaard blijven na het sluiten van de browser\n- Bij elke notitie een verwijderknop\n\nMaak het design clean en modern, met een lichtgrijze achtergrond en witte kaarten voor de notities. Gebruik een sans-serif lettertype.\n\nMaak het bestand index.html aan." },
+      { id: 25, label: "Lege invoer blokkeren", text: "Zorg ervoor dat lege notities niet opgeslagen kunnen worden. \nGeef het tekstveld een rode rand als iemand probeert een lege notitie op te slaan." },
+      { id: 26, label: "Bewerkfunctie toevoegen", text: "Voeg een bewerkfunctie toe aan de notities. Als ik op een notitie klik, \nwil ik de tekst kunnen aanpassen. Toon een Opslaan- en een Annuleren-knop \ntijdens het bewerken." },
+      { id: 27, label: "Bug melden \u2014 verwijderen werkt niet", text: "Het verwijderen van notities werkt niet goed. De notitie verdwijnt van \nhet scherm maar komt terug na een refresh. Kun je ervoor zorgen dat de \nbijgewerkte lijst direct naar localStorage wordt geschreven na het \nverwijderen?" },
+      { id: 28, label: "Zoekbalk toevoegen", text: "Voeg een zoekbalk toe bovenaan de pagina waarmee ik door mijn notities kan \nzoeken. De lijst filtert in realtime terwijl ik typ." },
+      { id: 29, label: "Hover-animatie", text: "Geef elke notitie een zachte schaduw en een subtiele hover-animatie zodat \nde kaart iets omhoog lijkt te komen als ik er met mijn muis overheen ga." },
+      { id: 30, label: "Donkere modus", text: "Voeg een donkere modus toe met een schakelaar in de rechterbovenhoek. \nOnthoud de voorkeur van de gebruiker in localStorage." },
+      { id: 31, label: "Categorielabels toevoegen", text: "Voeg categorielabels toe aan notities. Bij het aanmaken kan ik kiezen \nuit: Werk, Persoonlijk, Idee, of Belangrijk. Toon een gekleurde badge \nbij elke notitie op basis van de categorie. Sla de categorie ook op in \nlocalStorage." }
+    ]
+  },
+  {
+    num: 8,
+    title: "Project 4: Een dashboard met grafieken",
+    prompts: [
+      { id: 32, label: "Volledige dashboard-opdracht", text: "Maak een financieel dashboard als enkele HTML-pagina met de volgende kenmerken:\n\n1. Gebruik Chart.js via CDN (geen npm of build tools nodig)\n2. Bovenaan een header met \"Mijn Financieel Dashboard\" en het huidige jaar\n3. Een grid-layout met vier kaarten:\n   - Kaart 1: Lijndiagram - maandelijkse inkomsten vs uitgaven (jan-dec)\n   - Kaart 2: Taartdiagram - uitgaven per categorie\n   - Kaart 3: Staafdiagram - spaarquote per maand in percentages\n   - Kaart 4: Samenvattingskaart met totale inkomsten, totale uitgaven, en totaal gespaard\n\nGebruik deze voorbeelddata:\n- Maandelijkse inkomsten: rond de 3200 euro, licht stijgend door het jaar\n- Uitgaven: varieer tussen 2100 en 2800 per maand\n- Categorie\u00ebn: Huur (35%), Boodschappen (20%), Transport (10%), \n  Abonnementen (8%), Uit eten (12%), Overig (15%)\n\nMaak het visueel aantrekkelijk met een modern, donker kleurenschema.\nAlle grafieken moeten interactief zijn met tooltips." },
+      { id: 33, label: "Data apart zetten", text: "Verplaats alle data naar een apart data-object bovenaan het script-gedeelte,\nzodat ik makkelijk mijn eigen cijfers kan invullen. Voeg er commentaar bij\nzodat duidelijk is wat elk veld doet." },
+      { id: 34, label: "Interactieve elementen toevoegen", text: "Voeg de volgende interactieve elementen toe:\n\n1. Een dropdown menu bovenaan waarmee je kunt kiezen tussen 2024 en 2025\n   (met verschillende data per jaar)\n2. Een toggle-knop om te wisselen tussen donker en licht thema\n3. Als je op een kaart klikt, wordt die tijdelijk groter (een soort \n   focus-modus) zodat je de grafiek beter kunt bekijken\n4. Een animatie wanneer de pagina laadt: de grafieken moeten geleidelijk\n   verschijnen in plaats van in een keer" },
+      { id: 35, label: "Responsive maken", text: "Maak het dashboard volledig responsive:\n\n- Op een groot scherm (desktop): 2x2 grid van kaarten\n- Op een tablet: 2 kaarten per rij\n- Op een telefoon: alle kaarten onder elkaar, over de volle breedte\n- De grafieken moeten meeschalen zonder te vervormen\n- De header moet op mobiel compacter worden\n- De dropdown en toggle moeten op mobiel makkelijk te bedienen zijn\n  met je duim\n\nTest of het er goed uitziet op een scherm van 375px breed (iPhone formaat)." },
+      { id: 36, label: "Mobiel layout-probleem fixen", text: "Op mobiel overlapt de header-tekst met de dropdown. Kun je de header\nop kleine schermen op twee regels zetten, met de dropdown eronder?" },
+      { id: 37, label: "Laatste verbeteringen", text: "Voeg deze laatste verbeteringen toe:\n\n1. Een kleine footer met \"Laatst bijgewerkt: [huidige datum]\" die \n   automatisch de datum van vandaag toont\n2. Een export-knop die een screenshot van het dashboard maakt \n   (gebruik html2canvas via CDN)\n3. Mooie iconen bij de samenvattingskaart (gebruik emoji's als iconen:\n   een geldzak-emoji voor inkomsten, een winkelwagen voor uitgaven, \n   een spaarvarken voor gespaard)\n4. Een subtiele achtergrondanimatie: een langzaam bewegend gradient" }
+    ]
+  },
+  {
+    num: 9,
+    title: "Project 5: Automatiseer een taak",
+    prompts: [
+      { id: 38, label: "Python-script voor bestandssamenvattingen", text: "Maak een Python-script genaamd samenvatter.py dat het volgende doet:\n\n1. Kijk in een map genaamd 'invoer' (maak die aan als hij niet bestaat)\n2. Lees alle .txt en .md bestanden in die map\n3. Maak van elk bestand een samenvatting van maximaal 3 regels\n   (gebruik gewoon de eerste paar zinnen als samenvatting, we hebben\n   geen AI nodig hiervoor)\n4. Sla een samenvattingsrapport op in een map genaamd 'rapporten'\n   met de bestandsnaam 'rapport-JJJJ-MM-DD.txt'\n5. Het rapport moet bevatten:\n   - De datum en tijd van het rapport\n   - Het aantal verwerkte bestanden\n   - Per bestand: de bestandsnaam, de grootte, de laatste wijzigingsdatum,\n     en de samenvatting\n\nMaak het script zo dat ik het kan aanroepen met: python samenvatter.py\n\nVoeg duidelijk commentaar toe zodat ik snap wat elk deel doet." },
+      { id: 39, label: "Testbestanden aanmaken", text: "Maak een paar voorbeeldbestanden aan in de invoer-map zodat ik het\nscript kan testen. Maak drie bestanden:\n1. vergadering-jan.txt - notities van een fictieve vergadering\n2. idee-nieuw-product.txt - een brainstorm over een nieuw product\n3. weekverslag-wk3.md - een kort weekverslag" },
+      { id: 40, label: "Wijzigingen bijhouden", text: "Pas het script aan zodat het bijhoudt welke bestanden al verwerkt zijn.\nGebruik een klein JSON-bestand genaamd 'verwerkt.json' dat onthoudt:\n- Welke bestanden al samengevat zijn\n- Wanneer ze voor het laatst gewijzigd waren\n\nAls een bestand niet is gewijzigd sinds de laatste keer, sla het dan over.\nAls een bestand nieuw is of gewijzigd, verwerk het dan wel.\nToon in de terminal hoeveel bestanden nieuw, gewijzigd, of overgeslagen zijn." },
+      { id: 41, label: "Commandoregel-argumenten toevoegen", text: "Voeg de volgende functies toe aan het script:\n\n1. Commandoregel-argumenten:\n   - python samenvatter.py --map /pad/naar/andere/map\n     (zodat je elke map kunt scannen, niet alleen 'invoer')\n   - python samenvatter.py --alles\n     (forceer verwerking van alle bestanden, ook ongewijzigde)\n   - python samenvatter.py --zoek \"klant\"\n     (doorzoek alle samenvattingen op een zoekterm)\n\n2. Een nette samenvatting aan het einde van het rapport met statistieken:\n   totaal aantal woorden over alle bestanden, gemiddelde bestandsgrootte,\n   oudste en nieuwste bestand.\n\nGebruik de argparse module voor de commandoregel-argumenten." },
+      { id: 42, label: "Dry-run optie", text: "Voeg een --dry-run optie toe die laat zien wat het script zou doen,\nzonder daadwerkelijk bestanden te verwerken of rapporten aan te maken." },
+      { id: 43, label: "Automatisch inplannen", text: "Help me om samenvatter.py elke dag automatisch te laten draaien om 08:00 uur.\nGeef me instructies voor mijn besturingssysteem. Ik gebruik [Mac/Linux/Windows].\nZorg dat het script draait vanuit de juiste map en dat eventuele fouten\nworden gelogd naar een bestand genaamd 'fouten.log'." },
+      { id: 44, label: "Windows Taakplanner (PowerShell)", text: "Geef me een PowerShell-commando om samenvatter.py elke dag om 08:00\nin te plannen via de Windows Taakplanner." },
+      { id: 45, label: "Script robuuster maken", text: "Maak het script robuuster:\n\n1. Als een bestand niet gelezen kan worden (bijv. door rechten-problemen),\n   sla het over en log een waarschuwing in plaats van te crashen\n2. Als de invoer-map niet bestaat, maak hem aan met een vriendelijk bericht\n3. Als het rapport niet weggeschreven kan worden, toon een duidelijke\n   foutmelding\n4. Voeg een --verbose optie toe die extra details toont over wat het\n   script aan het doen is (handig voor als je problemen wilt opsporen)\n5. Aan het eind: toon een korte melding of alles goed ging of dat er\n   problemen waren" }
+    ]
+  },
+  {
+    num: 10,
+    title: "CLAUDE.md: Geef Claude een geheugen",
+    prompts: [
+      { id: 46, label: "CLAUDE.md laten genereren", text: "Maak een CLAUDE.md-bestand aan in de hoofdmap van dit project met basisinformatie over de notitie-app." },
+      { id: 47, label: "Voorbeeld CLAUDE.md \u2014 projectinfo", text: "# Project: Mijn Notitie-app\n\n## Over dit project\nEen eenvoudige notitie-app die volledig in de browser draait.\nGeen account, geen server -- alle notities worden opgeslagen in\nlocalStorage zodat ze blijven staan als je het tabblad sluit.\n\n## Technische opzet\n- E\u00e9n HTML-bestand: index.html\n- Alle CSS staat in een <style>-tag bovenaan\n- Alle JavaScript in een <script>-tag onderaan\n- Opslag via localStorage onder de sleutel \"mijn-notities\"\n\n## Voorkeuren\n- Donker thema, blauwe accentkleur (#4ea8ff)\n- Knoppen zijn afgerond\n- Geen pop-up dialogen voor bevestigingen -- gebruik liever een\n  korte melding bovenaan" },
+      { id: 48, label: "Voorbeeld CLAUDE.md \u2014 regels en bekende problemen", text: "## Regels\n- Wijzig nooit het opslagformaat van localStorage zonder eerst te\n  vragen. De gebruiker heeft daar al notities in staan.\n- Test elke nieuwe knop door 'm zelf \u00e9\u00e9n keer aan te klikken in het\n  voorbeeld voordat je zegt dat het werkt.\n- Voeg geen externe libraries toe zonder eerst te overleggen.\n\n## Bekende problemen\n- De zoekfunctie is hoofdlettergevoelig. Pas dat aan zodra ik er aan\n  toe ben.\n- De printknop werkt nog niet op Safari. Daar gaan we later naar\n  kijken -- bouw er nu niet op door." },
+      { id: 49, label: "Voorbeeld CLAUDE.md \u2014 stijl en kleuren", text: "## Stijl en toon\n- De app voelt zakelijk maar vriendelijk. Geen humor, geen emoji's.\n- Foutmeldingen zijn altijd in het Nederlands en geven een suggestie\n  voor een oplossing. Niet \"Fout!\" maar \"Vul eerst een titel in om\n  op te slaan.\"\n- Gebruik alleen deze kleuren:\n  - Achtergrond: #1a1f2e (donker)\n  - Tekst:       #e8eef5 (lichtgrijs)\n  - Accent:      #4ea8ff (blauw)\n  - Succes:      #6ee7b7 (groen)\n- Knoppen zijn altijd afgerond en hebben een hover-effect." },
+      { id: 50, label: "Voorbeeld CLAUDE.md \u2014 codestructuur", text: "## Codestructuur\n- Alles in \u00e9\u00e9n HTML-bestand. Geen aparte CSS- of JS-bestanden.\n- Boven elke functie een korte regel commentaar over wat het doet.\n- Geen externe libraries via CDN. Alles moet offline werken.\n- Variabelen en functies in het Nederlands (bv. notities, voegToe)." },
+      { id: 51, label: "CLAUDE.md laten bijwerken", text: "We hebben vandaag een zoekfunctie toegevoegd en de notities zijn nu sorteerbaar op datum. Kun je CLAUDE.md bijwerken zodat dit erin staat?" }
+    ]
+  },
+  {
+    num: 11,
+    title: "Fouten oplossen en debuggen",
+    prompts: [
+      { id: 52, label: "Slecht voorbeeld \u2014 vaag", text: "Het werkt niet. Kun je het fixen?" },
+      { id: 53, label: "Goed voorbeeld \u2014 gedetailleerd", text: "Als ik op de knop \"Opslaan\" klik op de pagina /instellingen, gebeurt er niets.\nIn de browserconsole zie ik deze foutmelding: \"TypeError: Cannot read\nproperties of undefined (reading 'email')\". Het ging gisteren nog goed,\nen sindsdien heb ik alleen het profielveld aangepast." },
+      { id: 54, label: "Bug melden met structuur", text: "Ik klik op \"Notitie opslaan\" in de notitie-app. Ik verwacht dat\nde notitie in de lijst verschijnt en ook na een herlaad nog\nzichtbaar is. In plaats daarvan blijft de lijst leeg en in de\nconsole staat:\n\nUncaught TypeError: Cannot read properties of null\n(reading 'value') at saveNote (index.html:142)" },
+      { id: 55, label: "Slecht voorbeeld \u2014 vaag (BTW)", text: "De BTW-calculator werkt niet. Kun je het fixen?" },
+      { id: 56, label: "Goed voorbeeld \u2014 NaN bug", text: "De BTW-calculator geeft \"NaN\" als resultaat in plaats van een bedrag.\nIk vul in: bedrag 12,50 en BTW-tarief 21. Verwacht resultaat: 15,13.\nWerkelijk resultaat: NaN.\nIn de browserconsole staan geen foutmeldingen." },
+      { id: 57, label: "Invoer robuuster maken", text: "Kun je ervoor zorgen dat de calculator ook werkt als ik bedragen\ninvoer met spaties of euroteken erbij, zoals \"\u20ac 1 250,50\"?" },
+      { id: 58, label: "Feature opnieuw opzetten", text: "De zoekfunctie in de notitie-app blijft vastlopen op rare invoer.\nWe hebben hem nu drie keer gepatcht en er komen telkens nieuwe bugs\nbij. Ik wil de zoekfunctie helemaal opnieuw opzetten. Verwijder de\nhuidige zoekcode en bouw een nieuwe, eenvoudige versie. Houd de rest\nvan de app intact." },
+      { id: 59, label: "Samenvatting vragen", text: "We lopen vast met dit probleem. Kun je samenvatten wat we tot nu toe\nhebben geprobeerd en wat volgens jou de meest waarschijnlijke oorzaak is?" },
+      { id: 60, label: "Stap voor stap door logica lopen", text: "Ik snap niet waarom de totaalprijs niet klopt. De individuele prijzen\nzijn correct, maar het eindtotaal is steeds te laag. Kun je me stap\nvoor stap door de berekening lopen en vertellen wat er in elke stap\ngebeurt?" }
+    ]
+  }
+];
+
+function escapeHtml(str) {
+  var d = document.createElement("div");
+  d.appendChild(document.createTextNode(str));
+  return d.innerHTML;
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = "Gekopieerd!";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  }).catch(function() {
+    /* Fallback for older browsers */
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch(e) {}
+    document.body.removeChild(ta);
+    var orig = btn.textContent;
+    btn.textContent = "Gekopieerd!";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  });
+}
+
+var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+function render() {
+  var app = document.getElementById("app");
+  var html = "";
+
+  for (var c = 0; c < DATA.length; c++) {
+    var ch = DATA[c];
+    html += '<div class="chapter" data-ch="' + c + '">';
+    html += '<div class="chapter-header" onclick="toggleChapter(' + c + ')">';
+    html += '<span class="arrow">' + arrowSvg + '</span>';
+    html += '<span class="ch-number">' + ch.num + '</span>';
+    html += '<span class="ch-title">' + escapeHtml(ch.title) + '</span>';
+    html += '</div>';
+    html += '<div class="chapter-body">';
+
+    for (var p = 0; p < ch.prompts.length; p++) {
+      var pr = ch.prompts[p];
+      html += '<div class="prompt-card">';
+      html += '<div class="prompt-label"><span class="num">' + pr.id + '.</span> ' + escapeHtml(pr.label) + '</div>';
+      html += '<div class="prompt-block">';
+      html += '<pre class="prompt-text">' + escapeHtml(pr.text) + '</pre>';
+      html += '<button class="copy-btn" data-prompt-id="' + pr.id + '">Kopieer</button>';
+      html += '</div></div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  app.innerHTML = html;
+
+  /* Attach copy handlers via delegation */
+  app.addEventListener("click", function(e) {
+    if (e.target.classList.contains("copy-btn")) {
+      var id = parseInt(e.target.getAttribute("data-prompt-id"), 10);
+      for (var i = 0; i < DATA.length; i++) {
+        for (var j = 0; j < DATA[i].prompts.length; j++) {
+          if (DATA[i].prompts[j].id === id) {
+            copyToClipboard(DATA[i].prompts[j].text, e.target);
+            return;
+          }
+        }
+      }
+    }
+  });
+}
+
+function toggleChapter(idx) {
+  var el = document.querySelector('.chapter[data-ch="' + idx + '"]');
+  if (el) el.classList.toggle("open");
+}
+
+render();
+</script>
+</body>
+</html>
