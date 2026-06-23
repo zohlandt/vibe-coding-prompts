@@ -1,0 +1,9 @@
+# pre-commit: gerunde op elke `git commit` zodra je éénmaal `pre-commit install` draait.
+# Install op Mac:   brew install pre-commit gitleaks
+# Install op Linux: pip install --user pre-commit && download gitleaks binary
+# Activeer in repo: pre-commit install
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.2
+    hooks:
+      - id: gitleaks
