@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompts — Vibe Coding with Claude</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --indigo: #1A1A2E;
+  --purple: #818CF8;
+  --purple-light: #a5aef8;
+  --purple-bg: #eef0ff;
+  --border: #e0e0e4;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --success: #34c759;
+  --radius: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  background: var(--indigo);
+  color: #fff;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.header .subtitle {
+  font-size: 1rem;
+  color: var(--purple-light);
+  font-weight: 400;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header .book-author {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 0.75rem;
+}
+
+.header .book-link {
+  margin-top: 0.75rem;
+}
+
+.header .book-link a {
+  color: var(--purple-light);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(165,174,248,0.3);
+  transition: border-color 0.15s;
+}
+
+.header .book-link a:hover {
+  border-color: var(--purple-light);
+}
+
+/* Main */
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* Chapter accordion */
+.chapter {
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s;
+}
+
+.chapter-header:hover {
+  background: var(--purple-bg);
+}
+
+.chapter-header .arrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+  color: var(--purple);
+}
+
+.chapter.open .chapter-header .arrow {
+  transform: rotate(90deg);
+}
+
+.chapter-header .arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chapter-header .ch-number {
+  flex-shrink: 0;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chapter-header .ch-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chapter-body {
+  display: none;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.chapter.open .chapter-body {
+  display: block;
+}
+
+/* Prompt card */
+.prompt-card {
+  margin-top: 1rem;
+}
+
+.prompt-card:first-child {
+  margin-top: 0.5rem;
+}
+
+.prompt-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.prompt-label .num {
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.prompt-block {
+  position: relative;
+  background: var(--code-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prompt-text {
+  display: block;
+  padding: 1rem 3.5rem 1rem 1rem;
+  color: var(--code-text);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #cdd6f4;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+}
+
+.copy-btn.copied {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header { padding: 2rem 1rem 1.75rem; }
+  .header h1 { font-size: 1.35rem; }
+  .header .subtitle { font-size: 0.9rem; }
+  .main { padding: 1rem 0.75rem 2rem; }
+  .chapter-header { padding: 0.85rem 1rem; }
+  .chapter-body { padding: 0 1rem 1rem; }
+  .prompt-text { font-size: 0.78rem; padding: 0.85rem 3rem 0.85rem 0.85rem; }
+  .chapter-header .ch-title { font-size: 0.88rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Vibe Coding with Claude</h1>
+  <p class="subtitle">All the prompts from the book, ready to copy.</p>
+  <p class="book-author">Jean-Marc Zohlandt</p>
+  <p class="book-link"><a href="https://www.amazon.com/s?k=Vibe+Coding+with+Claude+Zohlandt" target="_blank" rel="noopener">Get the book on Amazon</a> &nbsp;&middot;&nbsp; <a href="../">Nederlandse editie</a></p>
+</header>
+
+<main class="main" id="app"></main>
+
+<footer class="footer">
+  &copy; 2026 Jean-Marc Zohlandt &mdash; Vibe Coding with Claude: From Idea to App &mdash; No Coding Required
+</footer>
+
+<script>
+var DATA = [
+  {
+    "num": 3,
+    "title": "Your First Conversation with Claude Code",
+    "prompts": [
+      {
+        "id": 1,
+        "label": "Your very first prompt — Hello World",
+        "text": "Create an HTML page that says \"Hello World\" with nice styling"
+      },
+      {
+        "id": 2,
+        "label": "See what Claude made",
+        "text": "Show me the contents of index.html"
+      },
+      {
+        "id": 3,
+        "label": "Your first change",
+        "text": "Change the background color to light blue and make the text bigger"
+      }
+    ]
+  },
+  {
+    "num": 4,
+    "title": "How Does Claude Code “Think”?",
+    "prompts": [
+      {
+        "id": 4,
+        "label": "Vague example — contact form",
+        "text": "Make a contact form"
+      },
+      {
+        "id": 5,
+        "label": "Specific example — contact form",
+        "text": "Make a contact form with the fields: name, email address, \nphone number (optional), and a message field. The submit button \nshould be green with white text. After submitting, a confirmation \nmessage appears on the same page. Use the same style as the rest \nof the website."
+      },
+      {
+        "id": 6,
+        "label": "Vague example — sorting",
+        "text": "Add sorting"
+      },
+      {
+        "id": 7,
+        "label": "Specific example — sorting",
+        "text": "Add a sort button above the task list. The user should be able \nto sort by: date (newest first), priority (highest first), and \nalphabetically (A-Z). The active sort option should be visually \nhighlighted. Sort by date by default."
+      }
+    ]
+  },
+  {
+    "num": 5,
+    "title": "Project 1: A Personal Website",
+    "prompts": [
+      {
+        "id": 8,
+        "label": "Full website assignment",
+        "text": "I want to create a personal portfolio website. It will be a single\nHTML page with CSS styling. The site is for a fictional freelance\ngraphic designer named Lisa Bennett.\n\nThe page should have the following sections:\n- A header with her name and a short tagline\n- An \"About me\" section with a few paragraphs about her background\n- A \"Work\" section with 3 projects (title, short description,\n  and a placeholder for an image)\n- A \"Contact\" section with an email address and links to social media\n- A footer\n\nThe design should be modern and minimalist, with plenty of white space.\nColor scheme: dark blue (#1a365d) as the main color, with light gray\n(#f7f7f7) as the background. Font: the default system font is fine.\n\nCreate an index.html and a separate style.css file."
+      },
+      {
+        "id": 9,
+        "label": "View the code",
+        "text": "Show me the contents of index.html"
+      },
+      {
+        "id": 10,
+        "label": "Personalize the content",
+        "text": "Change the content. The site is now for me:\n- Name: Tom Baker\n- Profession: freelance photographer\n- Tagline: \"I capture moments you can't repeat\"\n- About me: I'm a self-taught photographer from Portland, specializing\n  in events and portrait photography. I've been freelancing for 5 years.\n- Projects:\n  1. \"Summer Festival\" - festival photography for a three-day music festival\n  2. \"City Portraits\" - a series of portraits of Portland business owners\n  3. \"Wedding of the Year\" - wedding photography in an old factory\n- Email: tom@bakerphotography.com"
+      },
+      {
+        "id": 11,
+        "label": "Change a single line of text",
+        "text": "Change the tagline to \"Every moment deserves a good picture\""
+      },
+      {
+        "id": 12,
+        "label": "Extended styling changes",
+        "text": "Adjust the styling:\n- Make the header a large block with the dark blue background color\n  and white text, with plenty of padding so it works as a hero section\n- The project cards should get a subtle shadow and move up slightly\n  on hover (a small animation)\n- The contact section should get a light blue background (#e8f0fe)\n- Make sure everything also looks good on a phone"
+      },
+      {
+        "id": 13,
+        "label": "Adjust a color",
+        "text": "The dark blue is too dark for me. Make it a bit lighter,\nmore toward royal blue."
+      },
+      {
+        "id": 14,
+        "label": "Fix spacing",
+        "text": "The text in the \"About me\" section is too close to the edge.\nCan you add more space on the left and right?"
+      },
+      {
+        "id": 15,
+        "label": "Add a gradient",
+        "text": "Add a subtle gradient to the header, from dark blue on the\nleft to a slightly lighter blue on the right."
+      },
+      {
+        "id": 16,
+        "label": "Start a local server",
+        "text": "Can you start a simple local web server so I can view the site\nwith live reloading?"
+      },
+      {
+        "id": 17,
+        "label": "Extend the site with an extra page",
+        "text": "I want to expand the site:\n1. Create a separate page \"about.html\" with a longer version of\n   the \"About me\" story. Also add a timeline there with important\n   moments from my career (make up 4 or 5).\n2. Add a navigation bar to both pages with links to\n   \"Home\" and \"About me\".\n3. Make sure the navigation bar looks consistent on both pages\n   and that the active page is highlighted."
+      },
+      {
+        "id": 18,
+        "label": "Photo gallery with lightbox",
+        "text": "Add a photo gallery page with a grid of 6 placeholder images.\nWhen you click an image, it should be displayed larger in an\noverlay (a lightbox effect)."
+      }
+    ]
+  },
+  {
+    "num": 6,
+    "title": "Project 2: A Handy Calculator",
+    "prompts": [
+      {
+        "id": 19,
+        "label": "Full tax calculator assignment",
+        "text": "I want to build a sales tax calculator as a single web page (HTML, CSS\nand JavaScript in one file). It's a practical little tool for\nfreelancers and small business owners.\n\nFunctionality:\n- An input field for an amount\n- A choice between 10% tax (reduced rate) and 20% tax (standard rate)\n- A switch to choose between \"add tax\" (before tax to after tax) and\n  \"remove tax\" (after tax to before tax)\n- Show the result immediately: the tax amount and the total\n- The calculation should update live while typing, without having\n  to click a button\n\nDesign:\n- Modern and clean, with a light blue color scheme\n- Should work well on both desktop and mobile\n- Amounts shown in dollars"
+      },
+      {
+        "id": 20,
+        "label": "Report three bugs at once",
+        "text": "There are a few problems with the calculator:\n\n1. Users type commas as thousands separators (e.g. \"1,250\" instead\n   of \"1250\"). The calculator should accept both, and also ignore a\n   dollar sign if someone types one.\n\n2. The \"remove tax\" calculation is wrong. For $120 including 20% tax,\n   the result should be $100 before tax.\n   The formula should be: before tax = after tax / (1 + tax rate).\n\n3. The input field is too small on mobile. Make it bigger with a\n   larger font size.\n\nCan you fix these three problems?"
+      },
+      {
+        "id": 21,
+        "label": "Copy-to-clipboard feature",
+        "text": "I want to add an extra feature to the tax calculator:\n\nAdd a \"Copy to clipboard\" button below the result.\nWhen you click it, a neat text is copied in this format:\n\nTax calculation\n---------------\nAmount before tax: $100.00\nTax (20%):         $ 20.00\nAmount after tax:  $120.00\n\nNote: use US number formatting with a period as the decimal\nseparator and commas as thousands separators (e.g. $1,250.00).\n\nAlso show a short confirmation \"Copied!\" when the user\nclicks the button."
+      },
+      {
+        "id": 22,
+        "label": "Clear button and footer",
+        "text": "Add two more things:\n\n1. A \"Clear\" button that empties the input field and resets\n   the result.\n\n2. Add a small footer at the bottom with the text\n   \"Sales tax rates vary by state and country -- check yours\"\n   in a light gray color. This reminds users to double-check\n   that they're using the right rate."
+      },
+      {
+        "id": 23,
+        "label": "Ask for an explanation of the calculation",
+        "text": "Can you explain how the remove-tax calculation works right now?\nWhich formula are you using? Walk through the calculation step by\nstep for the amount $120 with 20% tax."
+      }
+    ]
+  },
+  {
+    "num": 7,
+    "title": "Project 3: A Notes App with Storage",
+    "prompts": [
+      {
+        "id": 24,
+        "label": "Full notes app assignment",
+        "text": "I want to build a notes app as a single HTML page with inline CSS and JavaScript. \n\nThe app needs to do the following:\n- A text field where I can type a note\n- A button to save the note\n- A list of all saved notes, with the newest at the top\n- Each note shows the text and the date/time it was created\n- Notes are saved in localStorage so they persist after closing the browser\n- A delete button next to each note\n\nMake the design clean and modern, with a light gray background and white cards for the notes. Use a sans-serif font.\n\nCreate the file index.html."
+      },
+      {
+        "id": 25,
+        "label": "Block empty input",
+        "text": "Make sure empty notes can't be saved. \nGive the text field a red border if someone tries to save an empty note."
+      },
+      {
+        "id": 26,
+        "label": "Add an edit feature",
+        "text": "Add an edit function to the notes. When I click a note, \nI want to be able to change the text. Show a Save and a Cancel button \nwhile editing."
+      },
+      {
+        "id": 27,
+        "label": "Report a bug — delete doesn't work",
+        "text": "Deleting notes doesn't work properly. The note disappears from \nthe screen but comes back after a refresh. Can you make sure the \nupdated list is written to localStorage immediately after \ndeleting?"
+      },
+      {
+        "id": 28,
+        "label": "Add a search bar",
+        "text": "Add a search bar at the top of the page that lets me search through \nmy notes. The list filters in real time as I type."
+      },
+      {
+        "id": 29,
+        "label": "Hover animation",
+        "text": "Give each note a soft shadow and a subtle hover animation so the \ncard appears to lift slightly when I move my mouse over it."
+      },
+      {
+        "id": 30,
+        "label": "Dark mode",
+        "text": "Add a dark mode with a toggle in the top right corner. \nRemember the user's preference in localStorage."
+      },
+      {
+        "id": 31,
+        "label": "Add category labels",
+        "text": "Add category labels to notes. When creating a note, I can choose \nfrom: Work, Personal, Idea, or Important. Show a colored badge \non each note based on the category. Save the category in \nlocalStorage as well."
+      }
+    ]
+  },
+  {
+    "num": 8,
+    "title": "Project 4: A Dashboard with Charts",
+    "prompts": [
+      {
+        "id": 32,
+        "label": "Full dashboard assignment",
+        "text": "Create a financial dashboard as a single HTML page with the following features:\n\n1. Use Chart.js via CDN (no npm or build tools needed)\n2. At the top, a header with \"My Financial Dashboard\" and the current year\n3. A grid layout with four cards:\n   - Card 1: Line chart - monthly income vs expenses (Jan-Dec)\n   - Card 2: Pie chart - expenses per category\n   - Card 3: Bar chart - savings rate per month in percentages\n   - Card 4: Summary card with total income, total expenses, and total saved\n\nUse this sample data:\n- Monthly income: around 3200 dollars, rising slightly through the year\n- Expenses: vary between 2100 and 2800 per month\n- Categories: Rent (35%), Groceries (20%), Transport (10%), \n  Subscriptions (8%), Dining out (12%), Other (15%)\n\nMake it visually appealing with a modern, dark color scheme.\nAll charts must be interactive with tooltips."
+      },
+      {
+        "id": 33,
+        "label": "Separate the data",
+        "text": "Move all the data into a separate data object at the top of the script section,\nso I can easily fill in my own numbers. Add comments so it's clear\nwhat each field does."
+      },
+      {
+        "id": 34,
+        "label": "Add interactive elements",
+        "text": "Add the following interactive elements:\n\n1. A dropdown menu at the top to choose between 2024 and 2025\n   (with different data per year)\n2. A toggle button to switch between dark and light theme\n3. When you click a card, it temporarily gets bigger (a kind of \n   focus mode) so you can view the chart better\n4. An animation when the page loads: the charts should appear gradually\n   instead of all at once"
+      },
+      {
+        "id": 35,
+        "label": "Make it responsive",
+        "text": "Make the dashboard fully responsive:\n\n- On a large screen (desktop): 2x2 grid of cards\n- On a tablet: 2 cards per row\n- On a phone: all cards stacked, full width\n- The charts must scale without distorting\n- The header should be more compact on mobile\n- The dropdown and toggle must be easy to operate on mobile\n  with your thumb\n\nTest whether it looks good on a screen 375px wide (iPhone size)."
+      },
+      {
+        "id": 36,
+        "label": "Fix a mobile layout problem",
+        "text": "On mobile, the header text overlaps with the dropdown. Can you put the header\non two lines on small screens, with the dropdown below it?"
+      },
+      {
+        "id": 37,
+        "label": "Final improvements",
+        "text": "Add these final improvements:\n\n1. A small footer with \"Last updated: [current date]\" that \n   automatically shows today's date\n2. An export button that takes a screenshot of the dashboard \n   (use html2canvas via CDN)\n3. Nice icons on the summary card (use emoji as icons:\n   a money bag emoji for income, a shopping cart for expenses, \n   a piggy bank for savings)\n4. A subtle background animation: a slowly moving gradient"
+      }
+    ]
+  },
+  {
+    "num": 9,
+    "title": "Project 5: Automate a Task",
+    "prompts": [
+      {
+        "id": 38,
+        "label": "Python script for file summaries",
+        "text": "Create a Python script called summarizer.py that does the following:\n\n1. Look in a folder called 'input' (create it if it doesn't exist)\n2. Read all .txt and .md files in that folder\n3. Create a summary of at most 3 lines for each file\n   (just use the first few sentences as the summary, we don't\n   need AI for this)\n4. Save a summary report in a folder called 'reports'\n   with the file name 'report-YYYY-MM-DD.txt'\n5. The report should contain:\n   - The date and time of the report\n   - The number of files processed\n   - Per file: the file name, the size, the last modified date,\n     and the summary\n\nMake the script so I can run it with: python summarizer.py\n\nAdd clear comments so I understand what each part does."
+      },
+      {
+        "id": 39,
+        "label": "Create test files",
+        "text": "Create a few sample files in the input folder so I can test the\nscript. Create three files:\n1. meeting-jan.txt - notes from a fictional meeting\n2. idea-new-product.txt - a brainstorm about a new product\n3. weekly-report-wk3.md - a short weekly report"
+      },
+      {
+        "id": 40,
+        "label": "Track changes",
+        "text": "Change the script so it keeps track of which files have already been\nprocessed. Use a small JSON file called 'processed.json' that remembers:\n- Which files have already been summarized\n- When they were last modified\n\nIf a file hasn't changed since last time, skip it.\nIf a file is new or has changed, process it.\nShow in the terminal how many files were new, changed, or skipped."
+      },
+      {
+        "id": 41,
+        "label": "Add command-line arguments",
+        "text": "Add the following features to the script:\n\n1. Command-line arguments:\n   - python summarizer.py --folder /path/to/another/folder\n     (so you can scan any folder, not just 'input')\n   - python summarizer.py --all\n     (force processing of all files, including unchanged ones)\n   - python summarizer.py --search \"client\"\n     (search all summaries for a search term)\n\n2. A neat summary at the end of the report with statistics:\n   total word count across all files, average file size,\n   oldest and newest file.\n\nUse the argparse module for the command-line arguments."
+      },
+      {
+        "id": 42,
+        "label": "Dry-run option",
+        "text": "Add a --dry-run option that shows what the script would do,\nwithout actually processing files or creating reports."
+      },
+      {
+        "id": 43,
+        "label": "Schedule automatically",
+        "text": "Help me run summarizer.py automatically every day at 8:00 AM.\nGive me instructions for my operating system. I use [Mac/Linux/Windows].\nMake sure the script runs from the correct folder and that any errors\nare logged to a file called 'errors.log'."
+      },
+      {
+        "id": 44,
+        "label": "Windows Task Scheduler (PowerShell)",
+        "text": "Give me a PowerShell command to schedule summarizer.py to run every\nday at 8:00 AM via Windows Task Scheduler."
+      },
+      {
+        "id": 45,
+        "label": "Make the script more robust",
+        "text": "Make the script more robust:\n\n1. If a file can't be read (e.g. due to permission problems),\n   skip it and log a warning instead of crashing\n2. If the input folder doesn't exist, create it with a friendly message\n3. If the report can't be written, show a clear error message\n4. Add a --verbose option that shows extra details about what the\n   script is doing (useful when you want to track down problems)\n5. At the end: show a short message saying whether everything went\n   fine or whether there were problems"
+      }
+    ]
+  },
+  {
+    "num": 10,
+    "title": "CLAUDE.md: Give Claude a Memory",
+    "prompts": [
+      {
+        "id": 46,
+        "label": "Generate a CLAUDE.md",
+        "text": "Create a CLAUDE.md file in the root of this project with basic information about the notes app."
+      },
+      {
+        "id": 47,
+        "label": "Example CLAUDE.md — project info",
+        "text": "# Project: My Notes App\n\n## About this project\nA simple notes app that runs entirely in the browser.\nNo account, no server -- all notes are stored in\nlocalStorage so they stay put when you close the tab.\n\n## Technical setup\n- One HTML file: index.html\n- All CSS lives in a <style> tag at the top\n- All JavaScript in a <script> tag at the bottom\n- Storage via localStorage under the key \"my-notes\"\n\n## Preferences\n- Dark theme, blue accent color (#4ea8ff)\n- Buttons are rounded\n- No pop-up dialogs for confirmations -- use a short\n  message at the top instead"
+      },
+      {
+        "id": 48,
+        "label": "Example CLAUDE.md — rules and known issues",
+        "text": "## Rules\n- Never change the localStorage storage format without asking\n  first. The user already has notes stored in it.\n- Test every new button by clicking it once yourself in the\n  preview before you say it works.\n- Don't add external libraries without checking with me first.\n\n## Known issues\n- The search function is case-sensitive. Fix that once I get\n  around to it.\n- The print button doesn't work on Safari yet. We'll look at\n  that later -- don't build on it for now."
+      },
+      {
+        "id": 49,
+        "label": "Example CLAUDE.md — style and colors",
+        "text": "## Style and tone\n- The app feels businesslike but friendly. No humor, no emoji.\n- Error messages always suggest a solution. Not \"Error!\" but\n  \"Enter a title first to save.\"\n- Use only these colors:\n  - Background: #1a1f2e (dark)\n  - Text:       #e8eef5 (light gray)\n  - Accent:     #4ea8ff (blue)\n  - Success:    #6ee7b7 (green)\n- Buttons are always rounded and have a hover effect."
+      },
+      {
+        "id": 50,
+        "label": "Example CLAUDE.md — code structure",
+        "text": "## Code structure\n- Everything in one HTML file. No separate CSS or JS files.\n- A short comment line above every function saying what it does.\n- No external libraries via CDN. Everything must work offline.\n- Variable and function names in plain English (e.g. notes, addNote)."
+      },
+      {
+        "id": 51,
+        "label": "Update CLAUDE.md",
+        "text": "Today we added a search function and the notes can now be sorted by date. Can you update CLAUDE.md so this is in there?"
+      }
+    ]
+  },
+  {
+    "num": 11,
+    "title": "Finding and Fixing Bugs",
+    "prompts": [
+      {
+        "id": 52,
+        "label": "Bad example — vague",
+        "text": "It doesn't work. Can you fix it?"
+      },
+      {
+        "id": 53,
+        "label": "Good example — detailed",
+        "text": "When I click the \"Save\" button on the /settings page, nothing happens.\nIn the browser console I see this error: \"TypeError: Cannot read\nproperties of undefined (reading 'email')\". It was working fine\nyesterday, and since then I've only changed the profile field."
+      },
+      {
+        "id": 54,
+        "label": "Report a bug with structure",
+        "text": "I click \"Save note\" in the notes app. I expect the note to appear\nin the list and still be visible after a reload. Instead, the list\nstays empty and the console says:\n\nUncaught TypeError: Cannot read properties of null\n(reading 'value') at saveNote (index.html:142)"
+      },
+      {
+        "id": 55,
+        "label": "Bad example — vague (calculator)",
+        "text": "The tax calculator doesn't work. Can you fix it?"
+      },
+      {
+        "id": 56,
+        "label": "Good example — NaN bug",
+        "text": "The tax calculator shows \"NaN\" as the result instead of an amount.\nI enter the amount $1,250 with the 20% rate. Expected result: $1,500.00.\nActual result: NaN.\nThere are no error messages in the browser console."
+      },
+      {
+        "id": 57,
+        "label": "Make input more robust",
+        "text": "Can you make sure the calculator also works when I enter amounts\nwith spaces or a single decimal, like \"1 250.50\" or \"1,250.5\"?"
+      },
+      {
+        "id": 58,
+        "label": "Rebuild a feature",
+        "text": "The search feature in the notes app keeps breaking on odd input.\nWe've patched it three times now and new bugs keep appearing.\nI want to rebuild the search feature from scratch. Remove the\ncurrent search code and build a new, simple version. Keep the\nrest of the app intact."
+      },
+      {
+        "id": 59,
+        "label": "Ask for a summary",
+        "text": "We're stuck on this problem. Can you summarize what we've tried so\nfar and what you think the most likely cause is?"
+      },
+      {
+        "id": 60,
+        "label": "Walk through the logic step by step",
+        "text": "I don't understand why the total price is wrong. The individual\nprices are correct, but the final total is always too low. Can you\nwalk me through the calculation step by step and tell me what\nhappens at each step?"
+      }
+    ]
+  }
+];
+
+function escapeHtml(str) {
+  var d = document.createElement("div");
+  d.appendChild(document.createTextNode(str));
+  return d.innerHTML;
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  }).catch(function() {
+    /* Fallback for older browsers */
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch(e) {}
+    document.body.removeChild(ta);
+    var orig = btn.textContent;
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  });
+}
+
+var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+function render() {
+  var app = document.getElementById("app");
+  var html = "";
+
+  for (var c = 0; c < DATA.length; c++) {
+    var ch = DATA[c];
+    html += '<div class="chapter" data-ch="' + c + '">';
+    html += '<div class="chapter-header" onclick="toggleChapter(' + c + ')">';
+    html += '<span class="arrow">' + arrowSvg + '</span>';
+    html += '<span class="ch-number">' + ch.num + '</span>';
+    html += '<span class="ch-title">' + escapeHtml(ch.title) + '</span>';
+    html += '</div>';
+    html += '<div class="chapter-body">';
+
+    for (var p = 0; p < ch.prompts.length; p++) {
+      var pr = ch.prompts[p];
+      html += '<div class="prompt-card">';
+      html += '<div class="prompt-label"><span class="num">' + pr.id + '.</span> ' + escapeHtml(pr.label) + '</div>';
+      html += '<div class="prompt-block">';
+      html += '<pre class="prompt-text">' + escapeHtml(pr.text) + '</pre>';
+      html += '<button class="copy-btn" data-prompt-id="' + pr.id + '">Copy</button>';
+      html += '</div></div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  app.innerHTML = html;
+
+  /* Attach copy handlers via delegation */
+  app.addEventListener("click", function(e) {
+    if (e.target.classList.contains("copy-btn")) {
+      var id = parseInt(e.target.getAttribute("data-prompt-id"), 10);
+      for (var i = 0; i < DATA.length; i++) {
+        for (var j = 0; j < DATA[i].prompts.length; j++) {
+          if (DATA[i].prompts[j].id === id) {
+            copyToClipboard(DATA[i].prompts[j].text, e.target);
+            return;
+          }
+        }
+      }
+    }
+  });
+}
+
+function toggleChapter(idx) {
+  var el = document.querySelector('.chapter[data-ch="' + idx + '"]');
+  if (el) el.classList.toggle("open");
+}
+
+render();
+</script>
+</body>
+</html>
