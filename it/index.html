@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt &mdash; Vibe Coding con Claude</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --indigo: #1A1A2E;
+  --purple: #818CF8;
+  --purple-light: #a5aef8;
+  --purple-bg: #eef0ff;
+  --border: #e0e0e4;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --success: #34c759;
+  --radius: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  background: var(--indigo);
+  color: #fff;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.header .subtitle {
+  font-size: 1rem;
+  color: var(--purple-light);
+  font-weight: 400;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header .book-author {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 0.75rem;
+}
+
+.header .book-link {
+  margin-top: 0.75rem;
+}
+
+.header .book-link a {
+  color: var(--purple-light);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(165,174,248,0.3);
+  transition: border-color 0.15s;
+}
+
+.header .book-link a:hover {
+  border-color: var(--purple-light);
+}
+
+/* Main */
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* Chapter accordion */
+.chapter {
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s;
+}
+
+.chapter-header:hover {
+  background: var(--purple-bg);
+}
+
+.chapter-header .arrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+  color: var(--purple);
+}
+
+.chapter.open .chapter-header .arrow {
+  transform: rotate(90deg);
+}
+
+.chapter-header .arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chapter-header .ch-number {
+  flex-shrink: 0;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chapter-header .ch-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chapter-body {
+  display: none;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.chapter.open .chapter-body {
+  display: block;
+}
+
+/* Prompt card */
+.prompt-card {
+  margin-top: 1rem;
+}
+
+.prompt-card:first-child {
+  margin-top: 0.5rem;
+}
+
+.prompt-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.prompt-label .num {
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.prompt-block {
+  position: relative;
+  background: var(--code-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prompt-text {
+  display: block;
+  padding: 1rem 3.5rem 1rem 1rem;
+  color: var(--code-text);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #cdd6f4;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+}
+
+.copy-btn.copied {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header { padding: 2rem 1rem 1.75rem; }
+  .header h1 { font-size: 1.35rem; }
+  .header .subtitle { font-size: 0.9rem; }
+  .main { padding: 1rem 0.75rem 2rem; }
+  .chapter-header { padding: 0.85rem 1rem; }
+  .chapter-body { padding: 0 1rem 1rem; }
+  .prompt-text { font-size: 0.78rem; padding: 0.85rem 3rem 0.85rem 0.85rem; }
+  .chapter-header .ch-title { font-size: 0.88rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Vibe Coding con Claude</h1>
+  <p class="subtitle">Tutti i prompt del libro, pronti da copiare.</p>
+  <p class="book-author">Jean-Marc Zohlandt</p>
+  <p class="book-link"><a href="https://www.amazon.com/dp/B0HHQSJ7CN" target="_blank" rel="noopener">Il libro su Amazon (edizione inglese)</a> &nbsp;&middot;&nbsp; <a href="../">Nederlands</a> &middot; <a href="../en/">English</a> &middot; <a href="../de/">Deutsch</a> &middot; <a href="../fr/">Français</a> &middot; <a href="../es/">Español</a></p>
+</header>
+
+<main class="main" id="app"></main>
+
+<footer class="footer">
+  &copy; 2026 Jean-Marc Zohlandt &mdash; Vibe Coding con Claude: Dall'idea all'app &mdash; senza programmare
+</footer>
+
+<script>
+var DATA = [
+  {
+    "num": 3,
+    "title": "La tua prima conversazione con Claude Code",
+    "prompts": [
+      {
+        "id": 1,
+        "label": "Il tuo primissimo prompt — Hello World",
+        "text": "Crea una pagina HTML che dice \"Hello World\" con uno stile gradevole"
+      },
+      {
+        "id": 2,
+        "label": "Guarda cosa ha fatto Claude",
+        "text": "Mostrami il contenuto di index.html"
+      },
+      {
+        "id": 3,
+        "label": "La tua prima modifica",
+        "text": "Cambia il colore di sfondo in azzurro chiaro e ingrandisci il testo"
+      }
+    ]
+  },
+  {
+    "num": 4,
+    "title": "Come “pensa” Claude Code?",
+    "prompts": [
+      {
+        "id": 4,
+        "label": "Esempio vago — modulo di contatto",
+        "text": "Crea un modulo di contatto"
+      },
+      {
+        "id": 5,
+        "label": "Esempio specifico — modulo di contatto",
+        "text": "Crea un modulo di contatto con i campi: nome, indirizzo email, \nnumero di telefono (facoltativo) e un campo per il messaggio. Il pulsante \ndi invio deve essere verde con testo bianco. Dopo l'invio compare un \nmessaggio di conferma sulla stessa pagina. Usa lo stesso stile del resto \ndel sito web."
+      },
+      {
+        "id": 6,
+        "label": "Esempio vago — ordinamento",
+        "text": "Aggiungi l'ordinamento"
+      },
+      {
+        "id": 7,
+        "label": "Esempio specifico — ordinamento",
+        "text": "Aggiungi un pulsante di ordinamento sopra l'elenco delle attività. L'utente \ndeve poter ordinare per: data (prima le più recenti), priorità (prima le più \nalte) e in ordine alfabetico (A-Z). L'opzione di ordinamento attiva deve \nessere evidenziata visivamente. Ordina per data come impostazione predefinita."
+      }
+    ]
+  },
+  {
+    "num": 5,
+    "title": "Progetto 1: Un sito web personale",
+    "prompts": [
+      {
+        "id": 8,
+        "label": "Incarico completo del sito web",
+        "text": "Voglio creare un sito web portfolio personale. Sarà una singola\npagina HTML con stile CSS. Il sito è per una graphic designer\nfreelance immaginaria di nome Lisa Bianchi.\n\nLa pagina deve avere le seguenti sezioni:\n- Un header con il suo nome e un breve slogan\n- Una sezione \"Chi sono\" con qualche paragrafo sul suo percorso\n- Una sezione \"Lavori\" con 3 progetti (titolo, breve descrizione\n  e un segnaposto per un'immagine)\n- Una sezione \"Contatti\" con un indirizzo email e i link ai social\n- Un footer\n\nIl design deve essere moderno e minimalista, con molto spazio bianco.\nSchema colori: blu scuro (#1a365d) come colore principale, con grigio\nchiaro (#f7f7f7) come sfondo. Font: va bene il font di sistema predefinito.\n\nCrea un file index.html e un file style.css separato."
+      },
+      {
+        "id": 9,
+        "label": "Vedere il codice",
+        "text": "Mostrami il contenuto di index.html"
+      },
+      {
+        "id": 10,
+        "label": "Personalizzare i contenuti",
+        "text": "Cambia i contenuti. Il sito adesso è per me:\n- Nome: Tommaso Barbieri\n- Professione: fotografo freelance\n- Slogan: \"Catturo momenti che non si ripetono\"\n- Chi sono: sono un fotografo autodidatta di Bologna, specializzato\n  in eventi e ritratti. Lavoro come freelance da 5 anni.\n- Progetti:\n  1. \"Festival d'estate\" - fotografia per un festival musicale di tre giorni\n  2. \"Ritratti di città\" - una serie di ritratti di commercianti bolognesi\n  3. \"Il matrimonio dell'anno\" - fotografia di matrimonio in una vecchia fabbrica\n- Email: tommaso@barbierifoto.it"
+      },
+      {
+        "id": 11,
+        "label": "Cambiare una sola riga di testo",
+        "text": "Cambia lo slogan in \"Ogni momento merita una bella foto\""
+      },
+      {
+        "id": 12,
+        "label": "Modifiche di stile più ampie",
+        "text": "Modifica lo stile:\n- Trasforma l'header in un grande blocco con lo sfondo blu scuro\n  e testo bianco, con molto padding, in modo che funzioni come hero section\n- Le card dei progetti devono avere un'ombra leggera e sollevarsi\n  un po' al passaggio del mouse (una piccola animazione)\n- La sezione contatti deve avere uno sfondo azzurro chiaro (#e8f0fe)\n- Fai in modo che tutto abbia un bell'aspetto anche sul telefono"
+      },
+      {
+        "id": 13,
+        "label": "Regolare un colore",
+        "text": "Il blu scuro è troppo scuro per i miei gusti. Rendilo un po' più\nchiaro, più verso il blu reale."
+      },
+      {
+        "id": 14,
+        "label": "Sistemare la spaziatura",
+        "text": "Il testo nella sezione \"Chi sono\" è troppo vicino al bordo.\nPuoi aggiungere più spazio a sinistra e a destra?"
+      },
+      {
+        "id": 15,
+        "label": "Aggiungere una sfumatura",
+        "text": "Aggiungi una sfumatura leggera all'header, dal blu scuro a\nsinistra a un blu un po' più chiaro a destra."
+      },
+      {
+        "id": 16,
+        "label": "Avviare un server locale",
+        "text": "Puoi avviare un semplice server web locale così posso vedere il sito\ncon il live reload?"
+      },
+      {
+        "id": 17,
+        "label": "Ampliare il sito con una pagina extra",
+        "text": "Voglio ampliare il sito:\n1. Crea una pagina separata \"about.html\" con una versione più lunga\n   della storia \"Chi sono\". Aggiungi lì anche una timeline con i momenti\n   importanti della mia carriera (inventane 4 o 5).\n2. Aggiungi a entrambe le pagine una barra di navigazione con i link\n   a \"Home\" e \"Chi sono\".\n3. Fai in modo che la barra di navigazione sia coerente su entrambe le\n   pagine e che la pagina attiva sia evidenziata."
+      },
+      {
+        "id": 18,
+        "label": "Galleria fotografica con lightbox",
+        "text": "Aggiungi una pagina galleria fotografica con una griglia di 6 immagini\nsegnaposto. Quando clicco su un'immagine, deve essere mostrata più\ngrande in un overlay (un effetto lightbox)."
+      }
+    ]
+  },
+  {
+    "num": 6,
+    "title": "Progetto 2: Un calcolatore utile",
+    "prompts": [
+      {
+        "id": 19,
+        "label": "Incarico completo del calcolatore IVA",
+        "text": "Voglio costruire un calcolatore IVA come singola pagina web (HTML, CSS\ne JavaScript in un unico file). È un piccolo strumento pratico per\nliberi professionisti e piccole imprese.\n\nFunzionalità:\n- Un campo di input per un importo\n- Una scelta tra IVA al 10 % (aliquota ridotta) e IVA al 22 % (aliquota ordinaria)\n- Un interruttore per scegliere tra \"aggiungi IVA\" (da imponibile a totale)\n  e \"scorpora IVA\" (da totale a imponibile)\n- Mostra subito il risultato: l'importo dell'IVA e il totale\n- Il calcolo deve aggiornarsi in tempo reale mentre si scrive, senza\n  dover cliccare un pulsante\n\nDesign:\n- Moderno e pulito, con uno schema colori azzurro chiaro\n- Deve funzionare bene sia su desktop che su mobile\n- Importi in euro, con la virgola come separatore decimale"
+      },
+      {
+        "id": 20,
+        "label": "Segnalare tre bug in una volta",
+        "text": "Ci sono alcuni problemi con il calcolatore:\n\n1. Gli utenti scrivono i decimali con la virgola (es. \"12,50\" invece\n   di \"12.50\"). Il calcolatore deve accettare entrambe le forme, e\n   ignorare anche il simbolo € e gli spazi se qualcuno li scrive.\n\n2. Il calcolo \"scorpora IVA\" è sbagliato. Per 122 € IVA inclusa al 22 %,\n   il risultato deve essere un imponibile di 100 €.\n   La formula deve essere: imponibile = totale / (1 + aliquota).\n\n3. Il campo di input è troppo piccolo su mobile. Rendilo più grande,\n   con un carattere più grande.\n\nPuoi correggere questi tre problemi?"
+      },
+      {
+        "id": 21,
+        "label": "Funzione «copia negli appunti»",
+        "text": "Voglio aggiungere una funzionalità in più al calcolatore IVA:\n\nAggiungi un pulsante \"Copia negli appunti\" sotto il risultato.\nQuando lo clicco, deve essere copiato un testo ordinato in questo formato:\n\nCalcolo IVA\n-----------\nImponibile:      100,00 €\nIVA (22 %):       22,00 €\nTotale con IVA:  122,00 €\n\nNota: usa il formato numerico italiano, con la virgola come separatore\ndecimale e il punto come separatore delle migliaia (es. 1.250,00 €).\n\nMostra anche una breve conferma \"Copiato!\" quando l'utente\nclicca il pulsante."
+      },
+      {
+        "id": 22,
+        "label": "Pulsante Cancella e footer",
+        "text": "Aggiungi altre due cose:\n\n1. Un pulsante \"Cancella\" che svuota il campo di input e azzera\n   il risultato.\n\n2. Aggiungi un piccolo footer in fondo con il testo\n   \"Aliquote IVA 2026: verifica quelle in vigore\"\n   in grigio chiaro. Ricorda agli utenti di controllare\n   di stare usando l'aliquota giusta."
+      },
+      {
+        "id": 23,
+        "label": "Chiedere una spiegazione del calcolo",
+        "text": "Puoi spiegarmi come funziona adesso il calcolo di scorporo dell'IVA?\nQuale formula stai usando? Ripercorri il calcolo passo per passo\nper l'importo di 122 € con il 22 % di IVA."
+      }
+    ]
+  },
+  {
+    "num": 7,
+    "title": "Progetto 3: Un'app di note con salvataggio",
+    "prompts": [
+      {
+        "id": 24,
+        "label": "Incarico completo dell'app di note",
+        "text": "Voglio costruire un'app di note come singola pagina HTML con CSS e JavaScript inline. \n\nL'app deve fare quanto segue:\n- Un campo di testo dove posso scrivere una nota\n- Un pulsante per salvare la nota\n- Un elenco di tutte le note salvate, con la più recente in alto\n- Ogni nota mostra il testo e la data/ora di creazione\n- Le note vengono salvate in localStorage così restano dopo aver chiuso il browser\n- Un pulsante di eliminazione accanto a ogni nota\n\nRendi il design pulito e moderno, con uno sfondo grigio chiaro e card bianche per le note. Usa un font sans-serif.\n\nCrea il file index.html."
+      },
+      {
+        "id": 25,
+        "label": "Bloccare l'input vuoto",
+        "text": "Fai in modo che non si possano salvare note vuote. \nDai al campo di testo un bordo rosso se qualcuno prova a salvare una nota vuota."
+      },
+      {
+        "id": 26,
+        "label": "Aggiungere una funzione di modifica",
+        "text": "Aggiungi una funzione di modifica alle note. Quando clicco su una nota, \nvoglio poter cambiare il testo. Mostra un pulsante Salva e uno Annulla \ndurante la modifica."
+      },
+      {
+        "id": 27,
+        "label": "Segnalare un bug — l'eliminazione non funziona",
+        "text": "L'eliminazione delle note non funziona bene. La nota sparisce dallo \nschermo ma ricompare dopo un ricaricamento. Puoi fare in modo che \nl'elenco aggiornato venga scritto in localStorage subito dopo \nl'eliminazione?"
+      },
+      {
+        "id": 28,
+        "label": "Aggiungere una barra di ricerca",
+        "text": "Aggiungi una barra di ricerca in cima alla pagina che mi permetta di \ncercare tra le mie note. L'elenco si filtra in tempo reale mentre scrivo."
+      },
+      {
+        "id": 29,
+        "label": "Animazione al passaggio del mouse",
+        "text": "Dai a ogni nota un'ombra morbida e una leggera animazione al passaggio \ndel mouse, così che la card sembri sollevarsi un po' quando ci passo sopra."
+      },
+      {
+        "id": 30,
+        "label": "Modalità scura",
+        "text": "Aggiungi una modalità scura con un interruttore in alto a destra. \nRicorda la preferenza dell'utente in localStorage."
+      },
+      {
+        "id": 31,
+        "label": "Aggiungere etichette di categoria",
+        "text": "Aggiungi etichette di categoria alle note. Quando creo una nota, posso \nscegliere tra: Lavoro, Personale, Idea o Importante. Mostra un badge \ncolorato su ogni nota in base alla categoria. Salva anche la categoria \nin localStorage."
+      }
+    ]
+  },
+  {
+    "num": 8,
+    "title": "Progetto 4: Una dashboard con grafici",
+    "prompts": [
+      {
+        "id": 32,
+        "label": "Incarico completo della dashboard",
+        "text": "Crea una dashboard finanziaria come singola pagina HTML con le seguenti caratteristiche:\n\n1. Usa Chart.js tramite CDN (senza npm o strumenti di build)\n2. In alto, un header con \"La mia dashboard finanziaria\" e l'anno corrente\n3. Un layout a griglia con quattro card:\n   - Card 1: Grafico a linee - entrate mensili contro spese (gen-dic)\n   - Card 2: Grafico a torta - spese per categoria\n   - Card 3: Grafico a barre - tasso di risparmio per mese in percentuale\n   - Card 4: Card di riepilogo con entrate totali, spese totali e totale risparmiato\n\nUsa questi dati di esempio:\n- Entrate mensili: circa 3.200 € al mese, in leggera crescita durante l'anno\n- Spese: variano tra 2.100 e 2.800 € al mese\n- Categorie: Affitto (35 %), Spesa (20 %), Trasporti (10 %), \n  Abbonamenti (8 %), Ristoranti (12 %), Altro (15 %)\n\nRendila visivamente accattivante con uno schema colori moderno e scuro.\nTutti i grafici devono essere interattivi con i tooltip."
+      },
+      {
+        "id": 33,
+        "label": "Separare i dati",
+        "text": "Sposta tutti i dati in un oggetto dati separato in cima alla sezione script,\ncosì posso inserire facilmente i miei numeri. Aggiungi dei commenti in modo\nche sia chiaro a cosa serve ogni campo."
+      },
+      {
+        "id": 34,
+        "label": "Aggiungere elementi interattivi",
+        "text": "Aggiungi i seguenti elementi interattivi:\n\n1. Un menu a tendina in alto per scegliere tra 2024 e 2025\n   (con dati diversi per ogni anno)\n2. Un pulsante per passare dal tema scuro a quello chiaro\n3. Quando clicco su una card, si ingrandisce temporaneamente (una specie\n   di modalità focus) così posso vedere meglio il grafico\n4. Un'animazione al caricamento della pagina: i grafici devono comparire\n   gradualmente invece che tutti insieme"
+      },
+      {
+        "id": 35,
+        "label": "Renderla responsive",
+        "text": "Rendi la dashboard completamente responsive:\n\n- Su uno schermo grande (desktop): griglia 2x2 di card\n- Su tablet: 2 card per riga\n- Sul telefono: tutte le card impilate, a tutta larghezza\n- I grafici devono ridimensionarsi senza deformarsi\n- L'header deve essere più compatto su mobile\n- Il menu a tendina e l'interruttore devono essere facili da usare\n  su mobile con il pollice\n\nVerifica che stia bene su uno schermo largo 375px (dimensione iPhone)."
+      },
+      {
+        "id": 36,
+        "label": "Risolvere un problema di layout su mobile",
+        "text": "Su mobile il testo dell'header si sovrappone al menu a tendina. Puoi mettere\nl'header su due righe sugli schermi piccoli, con il menu a tendina sotto?"
+      },
+      {
+        "id": 37,
+        "label": "Ultimi miglioramenti",
+        "text": "Aggiungi questi ultimi miglioramenti:\n\n1. Un piccolo footer con \"Ultimo aggiornamento: [data corrente]\" che \n   mostra automaticamente la data di oggi\n2. Un pulsante di esportazione che fa uno screenshot della dashboard \n   (usa html2canvas tramite CDN)\n3. Belle icone sulla card di riepilogo (usa le emoji come icone:\n   un sacchetto di soldi per le entrate, un carrello per le spese, \n   un salvadanaio per i risparmi)\n4. Una leggera animazione di sfondo: una sfumatura che si muove lentamente"
+      }
+    ]
+  },
+  {
+    "num": 9,
+    "title": "Progetto 5: Automatizzare un compito",
+    "prompts": [
+      {
+        "id": 38,
+        "label": "Script Python per riassumere i file",
+        "text": "Crea uno script Python chiamato summarizer.py che faccia questo:\n\n1. Cerca in una cartella chiamata 'input' (creala se non esiste)\n2. Leggi tutti i file .txt e .md in quella cartella\n3. Crea un riassunto di massimo 3 righe per ogni file\n   (usa semplicemente le prime frasi come riassunto, non ci serve\n   l'AI per questo)\n4. Salva un report dei riassunti in una cartella chiamata 'reports'\n   con il nome file 'report-YYYY-MM-DD.txt'\n5. Il report deve contenere:\n   - La data e l'ora del report\n   - Il numero di file elaborati\n   - Per ogni file: il nome, la dimensione, la data dell'ultima\n     modifica e il riassunto\n\nFai in modo che io possa eseguire lo script con: python summarizer.py\n\nAggiungi commenti chiari così capisco cosa fa ogni parte."
+      },
+      {
+        "id": 39,
+        "label": "Creare file di prova",
+        "text": "Crea qualche file di esempio nella cartella input così posso testare\nlo script. Crea tre file:\n1. riunione-gen.txt - appunti di una riunione fittizia\n2. idea-nuovo-prodotto.txt - un brainstorming su un nuovo prodotto\n3. report-settimanale-s3.md - un breve report settimanale"
+      },
+      {
+        "id": 40,
+        "label": "Tenere traccia delle modifiche",
+        "text": "Modifica lo script in modo che tenga traccia di quali file sono già\nstati elaborati. Usa un piccolo file JSON chiamato 'processed.json'\nche ricordi:\n- Quali file sono già stati riassunti\n- Quando sono stati modificati l'ultima volta\n\nSe un file non è cambiato dall'ultima volta, saltalo.\nSe un file è nuovo o è cambiato, elaboralo.\nMostra nel terminale quanti file erano nuovi, modificati o saltati."
+      },
+      {
+        "id": 41,
+        "label": "Aggiungere argomenti da riga di comando",
+        "text": "Aggiungi allo script le seguenti funzioni:\n\n1. Argomenti da riga di comando:\n   - python summarizer.py --folder /percorso/di/unaltra/cartella\n     (così posso scansionare qualsiasi cartella, non solo 'input')\n   - python summarizer.py --all\n     (forza l'elaborazione di tutti i file, anche quelli non modificati)\n   - python summarizer.py --search \"cliente\"\n     (cerca un termine in tutti i riassunti)\n\n2. Un riepilogo ordinato alla fine del report con le statistiche:\n   numero totale di parole in tutti i file, dimensione media dei file,\n   file più vecchio e più recente.\n\nUsa il modulo argparse per gli argomenti da riga di comando."
+      },
+      {
+        "id": 42,
+        "label": "Opzione dry-run",
+        "text": "Aggiungi un'opzione --dry-run che mostri cosa farebbe lo script,\nsenza elaborare davvero i file o creare report."
+      },
+      {
+        "id": 43,
+        "label": "Pianificare automaticamente",
+        "text": "Aiutami a eseguire summarizer.py automaticamente ogni giorno alle 8:00.\nDammi le istruzioni per il mio sistema operativo. Uso [Mac/Linux/Windows].\nAssicurati che lo script venga eseguito dalla cartella giusta e che\neventuali errori vengano registrati in un file chiamato 'errors.log'."
+      },
+      {
+        "id": 44,
+        "label": "Utilità di pianificazione di Windows (PowerShell)",
+        "text": "Dammi un comando PowerShell per pianificare l'esecuzione di summarizer.py\nogni giorno alle 8:00 tramite l'Utilità di pianificazione di Windows."
+      },
+      {
+        "id": 45,
+        "label": "Rendere lo script più robusto",
+        "text": "Rendi lo script più robusto:\n\n1. Se un file non può essere letto (per esempio per problemi di permessi),\n   saltalo e registra un avviso invece di andare in crash\n2. Se la cartella input non esiste, creala con un messaggio cordiale\n3. Se il report non può essere scritto, mostra un messaggio di errore chiaro\n4. Aggiungi un'opzione --verbose che mostri dettagli extra su cosa sta\n   facendo lo script (utile quando vuoi rintracciare problemi)\n5. Alla fine: mostra un breve messaggio che dica se è andato tutto bene\n   o se ci sono stati problemi"
+      }
+    ]
+  },
+  {
+    "num": 10,
+    "title": "CLAUDE.md: Dai una memoria a Claude",
+    "prompts": [
+      {
+        "id": 46,
+        "label": "Generare un CLAUDE.md",
+        "text": "Crea un file CLAUDE.md nella root di questo progetto con le informazioni di base sull'app di note."
+      },
+      {
+        "id": 47,
+        "label": "Esempio di CLAUDE.md — info sul progetto",
+        "text": "# Progetto: la mia app di note\n\n## Su questo progetto\nUna semplice app di note che gira interamente nel browser.\nNessun account, nessun server -- tutte le note sono salvate\nin localStorage così restano lì quando chiudi la scheda.\n\n## Struttura tecnica\n- Un solo file HTML: index.html\n- Tutto il CSS sta in un tag <style> in cima\n- Tutto il JavaScript in un tag <script> in fondo\n- Salvataggio via localStorage sotto la chiave \"my-notes\"\n\n## Preferenze\n- Tema scuro, colore d'accento blu (#4ea8ff)\n- I pulsanti sono arrotondati\n- Niente finestre pop-up per le conferme -- usa invece un\n  breve messaggio in alto"
+      },
+      {
+        "id": 48,
+        "label": "Esempio di CLAUDE.md — regole e problemi noti",
+        "text": "## Regole\n- Non cambiare mai il formato di salvataggio in localStorage senza\n  chiedere prima. L'utente ha già delle note salvate lì.\n- Prova ogni nuovo pulsante cliccandolo una volta tu stesso\n  nell'anteprima prima di dire che funziona.\n- Non aggiungere librerie esterne senza prima consultarmi.\n\n## Problemi noti\n- La funzione di ricerca distingue maiuscole e minuscole. Da\n  sistemare quando avrò tempo.\n- Il pulsante di stampa non funziona ancora su Safari. Ci\n  penseremo più avanti -- per ora non costruirci sopra."
+      },
+      {
+        "id": 49,
+        "label": "Esempio di CLAUDE.md — stile e colori",
+        "text": "## Stile e tono\n- L'app è professionale ma cordiale. Niente umorismo, niente emoji.\n- I messaggi di errore suggeriscono sempre una soluzione. Non \"Errore!\"\n  ma \"Inserisci prima un titolo per salvare.\"\n- Usa solo questi colori:\n  - Sfondo:    #1a1f2e (scuro)\n  - Testo:     #e8eef5 (grigio chiaro)\n  - Accento:   #4ea8ff (blu)\n  - Successo:  #6ee7b7 (verde)\n- I pulsanti sono sempre arrotondati e hanno un effetto hover."
+      },
+      {
+        "id": 50,
+        "label": "Esempio di CLAUDE.md — struttura del codice",
+        "text": "## Struttura del codice\n- Tutto in un unico file HTML. Niente file CSS o JS separati.\n- Una breve riga di commento sopra ogni funzione che dica cosa fa.\n- Niente librerie esterne via CDN. Tutto deve funzionare offline.\n- Nomi di variabili e funzioni in inglese semplice (es. notes, addNote)."
+      },
+      {
+        "id": 51,
+        "label": "Aggiornare CLAUDE.md",
+        "text": "Oggi abbiamo aggiunto una funzione di ricerca e ora le note si possono ordinare per data. Puoi aggiornare CLAUDE.md in modo che ci sia scritto?"
+      }
+    ]
+  },
+  {
+    "num": 11,
+    "title": "Trovare e correggere i bug",
+    "prompts": [
+      {
+        "id": 52,
+        "label": "Cattivo esempio — vago",
+        "text": "Non funziona. Puoi sistemarlo?"
+      },
+      {
+        "id": 53,
+        "label": "Buon esempio — dettagliato",
+        "text": "Quando clicco il pulsante \"Salva\" nella pagina /settings, non succede\nniente. Nella console del browser vedo questo errore: \"TypeError: Cannot\nread properties of undefined (reading 'email')\". Ieri funzionava bene,\ne da allora ho cambiato solo il campo del profilo."
+      },
+      {
+        "id": 54,
+        "label": "Segnalare un bug in modo strutturato",
+        "text": "Clicco \"Salva nota\" nell'app di note. Mi aspetto che la nota compaia\nnella lista e sia ancora visibile dopo un ricaricamento. Invece la\nlista resta vuota e la console dice:\n\nUncaught TypeError: Cannot read properties of null\n(reading 'value') at saveNote (index.html:142)"
+      },
+      {
+        "id": 55,
+        "label": "Cattivo esempio — vago (calcolatore)",
+        "text": "Il calcolatore IVA non funziona. Puoi sistemarlo?"
+      },
+      {
+        "id": 56,
+        "label": "Buon esempio — risultato sbagliato",
+        "text": "Il calcolatore IVA mostra un importo sbagliato come risultato.\nInserisco l'importo 12,50 con l'aliquota del 22 %. Risultato atteso:\n15,25 €. Risultato effettivo: 14,64 €.\nNon ci sono messaggi di errore nella console del browser."
+      },
+      {
+        "id": 57,
+        "label": "Rendere l'input più robusto",
+        "text": "Puoi fare in modo che il calcolatore funzioni anche quando inserisco\nimporti con il separatore delle migliaia o con il punto decimale, come\n\"1.250,50\" o \"1250.50\"?"
+      },
+      {
+        "id": 58,
+        "label": "Ricostruire una funzionalità",
+        "text": "La funzione di ricerca nell'app di note continua a rompersi con input\nstrani. L'abbiamo rattoppata tre volte e continuano a comparire nuovi\nbug. Voglio ricostruire la funzione di ricerca da zero. Rimuovi il\ncodice di ricerca attuale e costruisci una versione nuova e semplice.\nLascia intatto il resto dell'app."
+      },
+      {
+        "id": 59,
+        "label": "Chiedere un riepilogo",
+        "text": "Siamo bloccati su questo problema. Puoi riassumere cosa abbiamo provato\nfinora e qual è secondo te la causa più probabile?"
+      },
+      {
+        "id": 60,
+        "label": "Ripercorrere la logica passo per passo",
+        "text": "Non capisco perché il prezzo totale è sbagliato. I singoli prezzi\nsono corretti, ma il totale finale è sempre troppo basso. Puoi\nguidarmi nel calcolo passo per passo e dirmi cosa succede in ogni\npassaggio?"
+      }
+    ]
+  }
+];
+
+function escapeHtml(str) {
+  var d = document.createElement("div");
+  d.appendChild(document.createTextNode(str));
+  return d.innerHTML;
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = "Copiato!";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  }).catch(function() {
+    /* Fallback for older browsers */
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch(e) {}
+    document.body.removeChild(ta);
+    var orig = btn.textContent;
+    btn.textContent = "Copiato!";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  });
+}
+
+var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+function render() {
+  var app = document.getElementById("app");
+  var html = "";
+
+  for (var c = 0; c < DATA.length; c++) {
+    var ch = DATA[c];
+    html += '<div class="chapter" data-ch="' + c + '">';
+    html += '<div class="chapter-header" onclick="toggleChapter(' + c + ')">';
+    html += '<span class="arrow">' + arrowSvg + '</span>';
+    html += '<span class="ch-number">' + ch.num + '</span>';
+    html += '<span class="ch-title">' + escapeHtml(ch.title) + '</span>';
+    html += '</div>';
+    html += '<div class="chapter-body">';
+
+    for (var p = 0; p < ch.prompts.length; p++) {
+      var pr = ch.prompts[p];
+      html += '<div class="prompt-card">';
+      html += '<div class="prompt-label"><span class="num">' + pr.id + '.</span> ' + escapeHtml(pr.label) + '</div>';
+      html += '<div class="prompt-block">';
+      html += '<pre class="prompt-text">' + escapeHtml(pr.text) + '</pre>';
+      html += '<button class="copy-btn" data-prompt-id="' + pr.id + '">Copia</button>';
+      html += '</div></div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  app.innerHTML = html;
+
+  /* Attach copy handlers via delegation */
+  app.addEventListener("click", function(e) {
+    if (e.target.classList.contains("copy-btn")) {
+      var id = parseInt(e.target.getAttribute("data-prompt-id"), 10);
+      for (var i = 0; i < DATA.length; i++) {
+        for (var j = 0; j < DATA[i].prompts.length; j++) {
+          if (DATA[i].prompts[j].id === id) {
+            copyToClipboard(DATA[i].prompts[j].text, e.target);
+            return;
+          }
+        }
+      }
+    }
+  });
+}
+
+function toggleChapter(idx) {
+  var el = document.querySelector('.chapter[data-ch="' + idx + '"]');
+  if (el) el.classList.toggle("open");
+}
+
+render();
+</script>
+</body>
+</html>
