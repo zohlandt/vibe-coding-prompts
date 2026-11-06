@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プロンプト集 &mdash; Claudeでバイブコーディング</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --indigo: #1A1A2E;
+  --purple: #818CF8;
+  --purple-light: #a5aef8;
+  --purple-bg: #eef0ff;
+  --border: #e0e0e4;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --success: #34c759;
+  --radius: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  background: var(--indigo);
+  color: #fff;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.header .subtitle {
+  font-size: 1rem;
+  color: var(--purple-light);
+  font-weight: 400;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header .book-author {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 0.75rem;
+}
+
+.header .book-link {
+  margin-top: 0.75rem;
+}
+
+.header .book-link a {
+  color: var(--purple-light);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(165,174,248,0.3);
+  transition: border-color 0.15s;
+}
+
+.header .book-link a:hover {
+  border-color: var(--purple-light);
+}
+
+/* Main */
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* Chapter accordion */
+.chapter {
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s;
+}
+
+.chapter-header:hover {
+  background: var(--purple-bg);
+}
+
+.chapter-header .arrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+  color: var(--purple);
+}
+
+.chapter.open .chapter-header .arrow {
+  transform: rotate(90deg);
+}
+
+.chapter-header .arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chapter-header .ch-number {
+  flex-shrink: 0;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chapter-header .ch-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chapter-body {
+  display: none;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.chapter.open .chapter-body {
+  display: block;
+}
+
+/* Prompt card */
+.prompt-card {
+  margin-top: 1rem;
+}
+
+.prompt-card:first-child {
+  margin-top: 0.5rem;
+}
+
+.prompt-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.prompt-label .num {
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.prompt-block {
+  position: relative;
+  background: var(--code-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prompt-text {
+  display: block;
+  padding: 1rem 3.5rem 1rem 1rem;
+  color: var(--code-text);
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", Meiryo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #cdd6f4;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+}
+
+.copy-btn.copied {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header { padding: 2rem 1rem 1.75rem; }
+  .header h1 { font-size: 1.35rem; }
+  .header .subtitle { font-size: 0.9rem; }
+  .main { padding: 1rem 0.75rem 2rem; }
+  .chapter-header { padding: 0.85rem 1rem; }
+  .chapter-body { padding: 0 1rem 1rem; }
+  .prompt-text { font-size: 0.78rem; padding: 0.85rem 3rem 0.85rem 0.85rem; }
+  .chapter-header .ch-title { font-size: 0.88rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Claudeでバイブコーディング</h1>
+  <p class="subtitle">本に登場するすべてのプロンプト。そのままコピーして使えます。</p>
+  <p class="book-author">Jean-Marc Zohlandt</p>
+  <p class="book-link"><a href="../">Nederlands</a> &middot; <a href="../en/">English</a> &middot; <a href="../de/">Deutsch</a> &middot; <a href="../fr/">Français</a> &middot; <a href="../es/">Español</a> &middot; <a href="../it/">Italiano</a> &middot; <a href="../pt/">Português</a></p>
+</header>
+
+<main class="main" id="app"></main>
+
+<footer class="footer">
+  &copy; 2026 Jean-Marc Zohlandt &mdash; Claudeでバイブコーディング：アイデアからアプリへ ― プログラミング不要
+</footer>
+
+<script>
+var DATA = [
+  {
+    "num": 3,
+    "title": "Claude Code とのはじめての会話",
+    "prompts": [
+      {
+        "id": 1,
+        "label": "はじめてのプロンプト ― Hello World",
+        "text": "\"Hello World\" と表示する HTML ページを、きれいなスタイルつきで作ってください。"
+      },
+      {
+        "id": 2,
+        "label": "Claude が作ったものを確認する",
+        "text": "index.html の中身を見せてください。"
+      },
+      {
+        "id": 3,
+        "label": "はじめての変更",
+        "text": "背景色を水色にして、文字を大きくしてください。"
+      }
+    ]
+  },
+  {
+    "num": 4,
+    "title": "Claude Code はどう「考える」のか",
+    "prompts": [
+      {
+        "id": 4,
+        "label": "あいまいな例 ― お問い合わせフォーム",
+        "text": "お問い合わせフォームを作ってください。"
+      },
+      {
+        "id": 5,
+        "label": "具体的な例 ― お問い合わせフォーム",
+        "text": "次の項目を持つお問い合わせフォームを作ってください：名前、メールアドレス、\n電話番号（任意）、メッセージ欄。送信ボタンは緑地に白文字に\nしてください。送信後は、同じページ内に確認メッセージが\n表示されるようにしてください。サイトの他の部分と同じスタイルを\n使ってください。"
+      },
+      {
+        "id": 6,
+        "label": "あいまいな例 ― 並べ替え",
+        "text": "並べ替えを追加してください。"
+      },
+      {
+        "id": 7,
+        "label": "具体的な例 ― 並べ替え",
+        "text": "タスク一覧の上に並べ替えボタンを追加してください。ユーザーが\n次の順で並べ替えられるようにしてください：日付（新しい順）、\n優先度（高い順）、五十音順。現在有効な並べ替えは視覚的に\n強調してください。デフォルトは日付順にしてください。"
+      }
+    ]
+  },
+  {
+    "num": 5,
+    "title": "プロジェクト 1 ― 自分のウェブサイト",
+    "prompts": [
+      {
+        "id": 8,
+        "label": "ウェブサイトの依頼（全文）",
+        "text": "個人のポートフォリオサイトを作りたいです。CSS でスタイリングした\nHTML 1ページ構成にしてください。架空のフリーランスのグラフィック\nデザイナー、佐藤理沙さんのサイトという設定です。\n\nページには次のセクションを入れてください：\n- 名前と短いキャッチコピーを入れたヘッダー\n- 経歴を数段落で紹介する「私について」セクション\n- 3つのプロジェクトを載せる「作品」セクション（タイトル、短い説明、\n  画像のプレースホルダー）\n- メールアドレスと SNS へのリンクを入れた「お問い合わせ」セクション\n- フッター\n\nデザインはモダンでミニマル、余白をたっぷり取ってください。\n配色：メインカラーは濃い青 (#1a365d)、背景は薄いグレー (#f7f7f7)。\nフォントはシステムのデフォルトフォントで構いません。\n\nindex.html と、別ファイルの style.css を作成してください。"
+      },
+      {
+        "id": 9,
+        "label": "コードを見る",
+        "text": "index.html の中身を見せてください"
+      },
+      {
+        "id": 10,
+        "label": "内容を自分用にする",
+        "text": "内容を変更してください。サイトは私自身のものにします：\n- 名前：田中翔太\n- 職業：フリーランスのフォトグラファー\n- キャッチコピー：「二度とない瞬間を、写真に残します」\n- 私について：福岡在住の独学のフォトグラファーで、イベントと\n  ポートレート撮影が専門です。フリーランス歴は 5年です。\n- プロジェクト：\n  1. 「夏フェス」- 3日間の音楽フェスのイベント撮影\n  2. 「街の肖像」- 福岡の店主たちのポートレートシリーズ\n  3. 「今年いちばんの結婚式」- 古い工場でのウェディング撮影\n- メール：shota@tanaka-photo.jp"
+      },
+      {
+        "id": 11,
+        "label": "1行だけ文章を変える",
+        "text": "キャッチコピーを「どんな瞬間にも、いい一枚を」に変えてください"
+      },
+      {
+        "id": 12,
+        "label": "スタイルをまとめて調整する",
+        "text": "スタイルを調整してください：\n- ヘッダーを濃い青の背景に白い文字の大きなブロックにして、\n  ヒーローセクションとして使えるよう余白をたっぷり取ってください\n- プロジェクトカードには控えめな影をつけ、ホバーしたときに\n  少し上に動くようにしてください（小さなアニメーション）\n- お問い合わせセクションの背景を薄い青 (#e8f0fe) にしてください\n- スマートフォンでもきれいに見えるようにしてください"
+      },
+      {
+        "id": 13,
+        "label": "色を調整する",
+        "text": "この濃い青は私には暗すぎます。もう少し明るく、\nロイヤルブルー寄りにしてください。"
+      },
+      {
+        "id": 14,
+        "label": "余白を直す",
+        "text": "「私について」セクションの文章が端に寄りすぎています。\n左右にもっと余白を足せますか？"
+      },
+      {
+        "id": 15,
+        "label": "グラデーションを追加する",
+        "text": "ヘッダーに控えめなグラデーションを入れてください。左の濃い青から\n右に向かって少し明るい青へ。"
+      },
+      {
+        "id": 16,
+        "label": "ローカルサーバーを起動する",
+        "text": "簡単なローカルウェブサーバーを起動して、サイトをライブリロードで\n確認できるようにしてもらえますか？"
+      },
+      {
+        "id": 17,
+        "label": "ページを追加してサイトを拡張する",
+        "text": "サイトを拡張したいです：\n1. 「私について」の長いバージョンを載せた別ページ about.html を\n   作ってください。そこにキャリアの重要な出来事を並べたタイムラインも\n   入れてください（4〜5個、適当に考えてください）。\n2. 両方のページに、「ホーム」と「私について」へのリンクを持つ\n   ナビゲーションバーを追加してください。\n3. ナビゲーションバーの見た目が両ページで一貫していて、\n   現在のページが強調表示されるようにしてください。"
+      },
+      {
+        "id": 18,
+        "label": "ライトボックス付きフォトギャラリー",
+        "text": "プレースホルダー画像 6枚をグリッドに並べたフォトギャラリーページを\n追加してください。画像をクリックするとオーバーレイで大きく表示される\nようにしてください（ライトボックス効果）。"
+      }
+    ]
+  },
+  {
+    "num": 6,
+    "title": "プロジェクト 2 ― 便利な計算機",
+    "prompts": [
+      {
+        "id": 19,
+        "label": "消費税計算機の依頼（全文）",
+        "text": "消費税計算機を 1枚のウェブページ（HTML、CSS、JavaScript を\n1 ファイルにまとめる）として作りたいです。フリーランスや\n小規模事業者向けの、ちょっとした実用ツールです。\n\n機能：\n- 金額の入力欄\n- 10%（標準税率）と 8%（軽減税率）の選択\n- 「税込にする」（税抜から税込へ）と「税抜にする」（税込から税抜へ）を\n  切り替えるスイッチ\n- 結果はすぐに表示する：消費税額と合計金額\n- ボタンを押さなくても、入力中にリアルタイムで計算が更新されること\n- 金額は 1円単位（小数なし）で、端数は四捨五入する\n\nデザイン：\n- モダンですっきりした、薄い青を基調とした配色\n- デスクトップでもスマートフォンでもきちんと動くこと\n- 金額は円で表示する"
+      },
+      {
+        "id": 20,
+        "label": "3つのバグをまとめて報告する",
+        "text": "計算機にいくつか問題があります：\n\n1. ユーザーは桁区切りにカンマを打ちます（例：「1250」ではなく\n   「1,250」）。計算機はどちらも受け付けるようにして、「円」や\n   空白が入力されても無視してください。\n\n2. 「税抜にする」の計算が間違っています。税込 1,100円（税率 10%）\n   なら、結果は税抜 1,000円になるはずです。\n   式は「税抜 = 税込 / (1 + 税率)」にしてください。\n\n3. スマートフォンで入力欄が小さすぎます。もっと大きくして、\n   フォントサイズも大きくしてください。\n\nこの 3つの問題を直してもらえますか？"
+      },
+      {
+        "id": 21,
+        "label": "クリップボードにコピーする機能",
+        "text": "消費税計算機に機能を追加したいです：\n\n結果の下に「クリップボードにコピー」ボタンを追加してください。\nクリックすると、次の形式で整ったテキストがコピーされるようにしてください：\n\n消費税計算\n---------------\n税抜金額:       1,000円\n消費税 (10%):     100円\n税込金額:       1,100円\n\n注意：数字は桁区切りにカンマを使い、小数は付けない形式にしてください\n（例：1,250円）。\n\nまた、ユーザーがボタンをクリックしたら「コピーしました！」と\n短い確認メッセージを表示してください。"
+      },
+      {
+        "id": 22,
+        "label": "クリアボタンとフッター",
+        "text": "あと 2つ追加してください：\n\n1. 入力欄を空にして結果をリセットする「クリア」ボタン。\n\n2. いちばん下に小さなフッターを追加して、\n   「消費税率は2026年時点のものです。最新の税率を確認してください」\n   という文を薄いグレーで表示してください。正しい税率を使っているか\n   ユーザーに確認を促すためです。"
+      },
+      {
+        "id": 23,
+        "label": "計算の説明を求める",
+        "text": "「税抜にする」の計算が今どう動いているか説明してもらえますか？\nどの式を使っていますか？ 税込 1,100円、税率 10% の場合について、\n計算を一歩ずつ順に追ってください。"
+      }
+    ]
+  },
+  {
+    "num": 7,
+    "title": "プロジェクト 3 ― 保存できるメモアプリ",
+    "prompts": [
+      {
+        "id": 24,
+        "label": "メモアプリの依頼（全文）",
+        "text": "メモアプリを、インライン CSS と JavaScript 入りの HTML 1ページとして作りたいです。\n\nアプリに必要な機能：\n- メモを入力するテキスト欄\n- メモを保存するボタン\n- 保存したすべてのメモの一覧。新しいものを上に表示する\n- 各メモには本文と、作成した日時を表示する\n- メモは localStorage に保存して、ブラウザを閉じても残るようにする\n- 各メモの横に削除ボタン\n\nデザインはすっきりモダンに。背景は薄いグレー、メモは白いカードで。サンセリフ（ゴシック体）のフォントを使ってください。\n\nindex.html というファイルを作成してください。"
+      },
+      {
+        "id": 25,
+        "label": "空の入力をブロックする",
+        "text": "空のメモは保存できないようにしてください。\n空のメモを保存しようとしたら、テキスト欄に赤い枠を表示してください。"
+      },
+      {
+        "id": 26,
+        "label": "編集機能を追加する",
+        "text": "メモに編集機能を追加してください。メモをクリックしたら\n本文を変更できるようにしたいです。編集中は保存ボタンと\nキャンセルボタンを表示してください。"
+      },
+      {
+        "id": 27,
+        "label": "バグを報告する ― 削除が動かない",
+        "text": "メモの削除が正しく動きません。メモは画面から消えますが、\n更新すると戻ってきます。削除した直後に、更新されたリストが\nlocalStorage に書き込まれるようにしてもらえますか？"
+      },
+      {
+        "id": 28,
+        "label": "検索バーを追加する",
+        "text": "ページの上部に検索バーを追加して、メモを検索できるようにしてください。\n入力中にリアルタイムで一覧が絞り込まれるようにしてください。"
+      },
+      {
+        "id": 29,
+        "label": "ホバーアニメーション",
+        "text": "各メモに柔らかい影と控えめなホバーアニメーションをつけて、\nマウスを乗せるとカードが少し浮き上がって見えるようにしてください。"
+      },
+      {
+        "id": 30,
+        "label": "ダークモード",
+        "text": "右上に切り替えスイッチ付きのダークモードを追加してください。\nユーザーの設定は localStorage に記憶してください。"
+      },
+      {
+        "id": 31,
+        "label": "カテゴリラベルを追加する",
+        "text": "メモにカテゴリラベルを追加してください。メモを作るときに、\n仕事、プライベート、アイデア、重要 の中から選べるようにします。\n各メモにカテゴリに応じた色付きのバッジを表示してください。\nカテゴリも localStorage に保存してください。"
+      }
+    ]
+  },
+  {
+    "num": 8,
+    "title": "プロジェクト 4 ― グラフつきダッシュボード",
+    "prompts": [
+      {
+        "id": 32,
+        "label": "ダッシュボードの依頼（全文）",
+        "text": "家計ダッシュボードを HTML 1ページで作ってください。機能は次のとおりです：\n\n1. Chart.js を CDN 経由で使う（npm やビルドツールは不要）\n2. 上部に「マイ家計ダッシュボード」と今年の年を表示するヘッダー\n3. 4枚のカードを並べたグリッドレイアウト：\n   - カード 1：折れ線グラフ - 月ごとの収入と支出（1月〜12月）\n   - カード 2：円グラフ - カテゴリ別の支出\n   - カード 3：棒グラフ - 月ごとの貯蓄率（パーセント）\n   - カード 4：収入合計、支出合計、貯蓄合計をまとめたサマリーカード\n\nサンプルデータは次を使ってください：\n- 月収：月約 32万円で、年を通して少しずつ増える\n- 支出：月ごとに 21万〜28万円の間で変動する\n- カテゴリ：家賃 (35%)、食費 (20%)、交通費 (10%)、\n  サブスク (8%)、外食 (12%)、その他 (15%)\n\nモダンでダークな配色で、見た目を魅力的にしてください。\nすべてのグラフはツールチップ付きでインタラクティブにしてください。"
+      },
+      {
+        "id": 33,
+        "label": "データを分離する",
+        "text": "すべてのデータを、script セクションの先頭にある独立したデータオブジェクトに\nまとめてください。自分の数字を簡単に入れられるようにしたいです。\n各フィールドが何なのかわかるよう、コメントを付けてください。"
+      },
+      {
+        "id": 34,
+        "label": "インタラクティブな要素を追加する",
+        "text": "次のインタラクティブな要素を追加してください：\n\n1. 上部に 2024年と 2025年を選べるドロップダウンメニュー\n   （年ごとに異なるデータ）\n2. ダークテーマとライトテーマを切り替えるトグルボタン\n3. カードをクリックすると一時的に大きくなる（フォーカスモードの\n   ようなもの）、グラフをよく見られるようにする\n4. ページ読み込み時のアニメーション：グラフが一斉にではなく、\n   順番に現れるようにする"
+      },
+      {
+        "id": 35,
+        "label": "レスポンシブにする",
+        "text": "ダッシュボードを完全にレスポンシブにしてください：\n\n- 大きな画面（デスクトップ）：カードを 2x2 のグリッドに\n- タブレット：1行にカード 2枚\n- スマートフォン：すべてのカードを縦に積んで、幅いっぱいに\n- グラフは歪まずに拡大縮小すること\n- ヘッダーはモバイルではもっとコンパクトに\n- ドロップダウンとトグルは、モバイルで親指で操作しやすいように\n\n幅 375px の画面（iPhone サイズ）できれいに見えるかテストしてください。"
+      },
+      {
+        "id": 36,
+        "label": "モバイルのレイアウト問題を直す",
+        "text": "モバイルでヘッダーの文字がドロップダウンと重なります。小さい画面では\nヘッダーを 2行にして、その下にドロップダウンを置いてもらえますか？"
+      },
+      {
+        "id": 37,
+        "label": "最後の仕上げ",
+        "text": "最後の仕上げを追加してください：\n\n1. 「最終更新：[今日の日付]」と、今日の日付を自動的に表示する\n   小さなフッター\n2. ダッシュボードのスクリーンショットを撮るエクスポートボタン\n   （html2canvas を CDN 経由で使う）\n3. サマリーカードに気の利いたアイコン（絵文字をアイコンとして使う：\n   収入にはお金の袋、支出にはショッピングカート、\n   貯蓄には貯金箱）\n4. 控えめな背景アニメーション：ゆっくり動くグラデーション"
+      }
+    ]
+  },
+  {
+    "num": 9,
+    "title": "プロジェクト 5 ― 作業を自動化する",
+    "prompts": [
+      {
+        "id": 38,
+        "label": "ファイル要約の Python スクリプト",
+        "text": "summarizer.py という名前の Python スクリプトを作ってください。\nやることは次のとおりです：\n\n1. 'input' というフォルダを見る（なければ作る）\n2. そのフォルダにある .txt と .md のファイルをすべて読む\n3. ファイルごとに最大 3行の要約を作る\n   （最初の数文をそのまま要約として使うだけでよく、\n   AI は必要ありません）\n4. 要約レポートを 'reports' というフォルダに\n   'report-YYYY-MM-DD.txt' というファイル名で保存する\n5. レポートには次を含める：\n   - レポートの日時\n   - 処理したファイル数\n   - ファイルごとに：ファイル名、サイズ、最終更新日、要約\n\npython summarizer.py で実行できるようにしてください。\n\n各部分が何をしているかわかるよう、わかりやすいコメントを付けてください。"
+      },
+      {
+        "id": 39,
+        "label": "テストファイルを作る",
+        "text": "スクリプトをテストできるよう、input フォルダにサンプルファイルを\nいくつか作ってください。3つのファイルを：\n1. 会議メモ-1月.txt - 架空の会議のメモ\n2. 新商品のアイデア.txt - 新商品についてのブレインストーミング\n3. 週報-第3週.md - 短い週報"
+      },
+      {
+        "id": 40,
+        "label": "変更を追跡する",
+        "text": "どのファイルを処理済みか記録するようにスクリプトを変更してください。\n'processed.json' という小さな JSON ファイルを使って、次を覚えておきます：\n- どのファイルをすでに要約したか\n- それぞれの最終更新日時\n\n前回から変わっていないファイルはスキップしてください。\n新しいファイルや変更されたファイルは処理してください。\n新規、変更、スキップがそれぞれ何件だったかをターミナルに表示してください。"
+      },
+      {
+        "id": 41,
+        "label": "コマンドライン引数を追加する",
+        "text": "スクリプトに次の機能を追加してください：\n\n1. コマンドライン引数：\n   - python summarizer.py --folder /path/to/another/folder\n     （'input' だけでなく、任意のフォルダを走査できるように）\n   - python summarizer.py --all\n     （変更のないものも含め、すべてのファイルを強制的に処理する）\n   - python summarizer.py --search \"顧客\"\n     （すべての要約から検索語を探す）\n\n2. レポートの末尾に統計のまとめ：\n   全ファイルの合計語数、平均ファイルサイズ、\n   いちばん古いファイルと新しいファイル。\n\nコマンドライン引数には argparse モジュールを使ってください。"
+      },
+      {
+        "id": 42,
+        "label": "ドライランオプション",
+        "text": "--dry-run オプションを追加してください。実際にファイルを処理したり\nレポートを作ったりせずに、スクリプトが何をするかだけを表示します。"
+      },
+      {
+        "id": 43,
+        "label": "自動実行をスケジュールする",
+        "text": "summarizer.py を毎日 8:00 に自動実行したいです。\n私の OS 向けの手順を教えてください。使っているのは [Mac/Linux/Windows] です。\nスクリプトが正しいフォルダから実行されるようにして、エラーがあれば\n'errors.log' というファイルに記録されるようにしてください。"
+      },
+      {
+        "id": 44,
+        "label": "Windows タスクスケジューラ（PowerShell）",
+        "text": "Windows のタスクスケジューラで summarizer.py を毎日 8:00 に実行するよう\n登録する PowerShell コマンドを教えてください。"
+      },
+      {
+        "id": 45,
+        "label": "スクリプトをもっと堅牢にする",
+        "text": "スクリプトをもっと堅牢にしてください：\n\n1. ファイルが読めない場合（権限の問題など）は、クラッシュせずに\n   スキップして警告をログに残す\n2. input フォルダがなければ、親切なメッセージを出して作成する\n3. レポートが書き込めなければ、わかりやすいエラーメッセージを表示する\n4. スクリプトが何をしているかの詳細を表示する --verbose オプションを\n   追加する（問題を追いかけたいときに便利）\n5. 最後に、すべて順調だったか問題があったかを短いメッセージで示す"
+      }
+    ]
+  },
+  {
+    "num": 10,
+    "title": "CLAUDE.md ― Claude に記憶を持たせる",
+    "prompts": [
+      {
+        "id": 46,
+        "label": "CLAUDE.md を生成する",
+        "text": "このプロジェクトのルートに CLAUDE.md ファイルを作って、ノートアプリの基本情報を書いてください。"
+      },
+      {
+        "id": 47,
+        "label": "CLAUDE.md の例 ― プロジェクト情報",
+        "text": "# プロジェクト：マイノートアプリ\n\n## このプロジェクトについて\nブラウザだけで完結するシンプルなノートアプリ。\nアカウントもサーバーもなし。すべてのノートは localStorage に\n保存されるので、タブを閉じても残る。\n\n## 技術構成\n- HTML ファイルは1つだけ：index.html\n- CSS はすべて先頭の <style> タグ内に書く\n- JavaScript はすべて末尾の <script> タグ内に書く\n- 保存は localStorage のキー \"my-notes\" を使う\n\n## 好み\n- ダークテーマ、アクセントカラーは青 (#4ea8ff)\n- ボタンは角丸\n- 確認のポップアップダイアログは使わない。代わりに\n  画面上部に短いメッセージを出す"
+      },
+      {
+        "id": 48,
+        "label": "CLAUDE.md の例 ― ルールと既知の問題",
+        "text": "## ルール\n- localStorage の保存形式は、先に確認せずに変更しないこと。\n  ユーザーはすでにノートを保存している。\n- 新しいボタンは、「動きます」と言う前に必ずプレビューで\n  一度自分でクリックして試すこと。\n- 外部ライブラリは、私に相談せずに追加しないこと。\n\n## 既知の問題\n- 検索機能が大文字と小文字を区別してしまう。手が空いたら直す。\n- 印刷ボタンが Safari ではまだ動かない。あとで見るので、\n  今はこれを前提に何かを作らないこと。"
+      },
+      {
+        "id": 49,
+        "label": "CLAUDE.md の例 ― スタイルと色",
+        "text": "## スタイルとトーン\n- このアプリはビジネス寄りだが親しみやすい。ユーモアや絵文字は使わない。\n- エラーメッセージは必ず解決策を示す。「エラー！」ではなく\n  「保存するには、まずタイトルを入力してください。」のように。\n- 使う色はこれだけ：\n  - 背景：     #1a1f2e（ダーク）\n  - 文字：     #e8eef5（ライトグレー）\n  - アクセント：#4ea8ff（青）\n  - 成功：     #6ee7b7（緑）\n- ボタンは常に角丸で、ホバー効果をつける。"
+      },
+      {
+        "id": 50,
+        "label": "CLAUDE.md の例 ― コード構成",
+        "text": "## コード構成\n- すべて1つの HTML ファイルにまとめる。CSS や JS を別ファイルにしない。\n- 各関数の上に、何をする関数かを示す短いコメント行を1つ書く。\n- CDN 経由の外部ライブラリは使わない。すべてオフラインで動くこと。\n- 変数名と関数名は平易な英語にする（例：notes、addNote）。"
+      },
+      {
+        "id": 51,
+        "label": "CLAUDE.md を更新する",
+        "text": "今日は検索機能を追加して、ノートを日付順に並べ替えられるようにしました。この内容が入るように CLAUDE.md を更新してもらえますか？"
+      }
+    ]
+  },
+  {
+    "num": 11,
+    "title": "バグを見つけて直す",
+    "prompts": [
+      {
+        "id": 52,
+        "label": "悪い例 ― あいまい",
+        "text": "動きません。直してもらえますか？"
+      },
+      {
+        "id": 53,
+        "label": "良い例 ― 詳しい",
+        "text": "/settings ページで「保存」ボタンをクリックしても何も起きません。\nブラウザのコンソールにはこのエラーが出ています：\"TypeError: Cannot read\nproperties of undefined (reading 'email')\"。昨日までは問題なく動いていて、\nそれ以降に変えたのはプロフィール欄だけです。"
+      },
+      {
+        "id": 54,
+        "label": "構造立ててバグを報告する",
+        "text": "ノートアプリで「ノートを保存」をクリックしています。ノートが一覧に表示されて、\nリロード後も残っていることを期待しています。ところが一覧は空のままで、\nコンソールにはこう出ています：\n\nUncaught TypeError: Cannot read properties of null\n(reading 'value') at saveNote (index.html:142)"
+      },
+      {
+        "id": 55,
+        "label": "悪い例 ― あいまい（計算機）",
+        "text": "消費税計算機が動きません。直してもらえますか？"
+      },
+      {
+        "id": 56,
+        "label": "良い例 ― NaN バグ",
+        "text": "消費税計算機の結果が金額ではなく \"NaN\" と表示されます。\n金額に全角で １２５０ と入力して、税率 10% を選びました。期待する結果：1,375円。\n実際の結果：NaN。\nブラウザのコンソールにエラーメッセージは出ていません。"
+      },
+      {
+        "id": 57,
+        "label": "入力をもっと堅牢にする",
+        "text": "金額にスペースが入っていたり、全角のカンマが入っていたりしても、\nたとえば \"1 250\" や \"１，２５０\" でも計算機が動くようにしてもらえますか？"
+      },
+      {
+        "id": 58,
+        "label": "機能を作り直す",
+        "text": "ノートアプリの検索機能が、変わった入力のたびに壊れます。\nもう3回も修正しましたが、新しいバグが出続けています。\n検索機能をゼロから作り直したいです。今の検索コードを削除して、\n新しいシンプルなバージョンを作ってください。アプリのほかの部分は\nそのまま残してください。"
+      },
+      {
+        "id": 59,
+        "label": "まとめを求める",
+        "text": "この問題で行き詰まっています。これまでに試したことと、\nいちばん可能性の高い原因は何だと思うかをまとめてもらえますか？"
+      },
+      {
+        "id": 60,
+        "label": "ロジックを1ステップずつたどる",
+        "text": "合計金額がなぜ間違うのかわかりません。個々の価格は正しいのに、\n最終的な合計がいつも低すぎます。計算を1ステップずつたどって、\n各ステップで何が起きているか教えてもらえますか？"
+      }
+    ]
+  }
+];
+
+function escapeHtml(str) {
+  var d = document.createElement("div");
+  d.appendChild(document.createTextNode(str));
+  return d.innerHTML;
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = "コピーしました";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  }).catch(function() {
+    /* Fallback for older browsers */
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch(e) {}
+    document.body.removeChild(ta);
+    var orig = btn.textContent;
+    btn.textContent = "コピーしました";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove("copied");
+    }, 1500);
+  });
+}
+
+var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+function render() {
+  var app = document.getElementById("app");
+  var html = "";
+
+  for (var c = 0; c < DATA.length; c++) {
+    var ch = DATA[c];
+    html += '<div class="chapter" data-ch="' + c + '">';
+    html += '<div class="chapter-header" onclick="toggleChapter(' + c + ')">';
+    html += '<span class="arrow">' + arrowSvg + '</span>';
+    html += '<span class="ch-number">' + ch.num + '</span>';
+    html += '<span class="ch-title">' + escapeHtml(ch.title) + '</span>';
+    html += '</div>';
+    html += '<div class="chapter-body">';
+
+    for (var p = 0; p < ch.prompts.length; p++) {
+      var pr = ch.prompts[p];
+      html += '<div class="prompt-card">';
+      html += '<div class="prompt-label"><span class="num">' + pr.id + '.</span> ' + escapeHtml(pr.label) + '</div>';
+      html += '<div class="prompt-block">';
+      html += '<pre class="prompt-text">' + escapeHtml(pr.text) + '</pre>';
+      html += '<button class="copy-btn" data-prompt-id="' + pr.id + '">コピー</button>';
+      html += '</div></div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  app.innerHTML = html;
+
+  /* Attach copy handlers via delegation */
+  app.addEventListener("click", function(e) {
+    if (e.target.classList.contains("copy-btn")) {
+      var id = parseInt(e.target.getAttribute("data-prompt-id"), 10);
+      for (var i = 0; i < DATA.length; i++) {
+        for (var j = 0; j < DATA[i].prompts.length; j++) {
+          if (DATA[i].prompts[j].id === id) {
+            copyToClipboard(DATA[i].prompts[j].text, e.target);
+            return;
+          }
+        }
+      }
+    }
+  });
+}
+
+function toggleChapter(idx) {
+  var el = document.querySelector('.chapter[data-ch="' + idx + '"]');
+  if (el) el.classList.toggle("open");
+}
+
+render();
+</script>
+</body>
+</html>
